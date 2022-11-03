@@ -3,18 +3,20 @@ import Word from "./Word";
 
 const WordListBlock = styled.div`
     width: 350px;
-    height: 82.5px;
+    height: ${ props => props.lineSet.height};
     display: grid;
-    grid-template-rows: repeat(1, 1fr);
-    grid-gap: 155px;
+    grid-template-rows: ${ props => props.lineSet.rows};
+    grid-gap: ${ props => props.lineSet.gap};
     padding: 10px;
     box-sizing: border-box;
+    transition: height 300ms;
 `;
 
 const WordList = props => {
     const listIndex = props.listIndex;
     const wordList = props.wordList;
-    const array = [0];
+    const lineSet = props.lineSet;
+    const array = lineSet.array;
     const RenderWord = index => { // wordList에서 word 추출
         if ( wordList.length > index )
             return wordList[index];
@@ -30,7 +32,7 @@ const WordList = props => {
             return null;
     }
     return (
-        <WordListBlock>
+        <WordListBlock lineSet={lineSet}>
             {array.map(index => <Word word={RenderWord(index)} wordState={RenderState(index)}></Word>)}
         </WordListBlock>
     );

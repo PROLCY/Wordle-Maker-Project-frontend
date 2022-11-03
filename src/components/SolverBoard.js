@@ -3,7 +3,9 @@ import WordList from "./Word/WordList";
 import Keyboard from './Keyboard/Keyboard';
 import { useEffect, useState } from 'react';
 import { BACK } from './Keyboard/Keyboard';
+import { oneLine, sixLines } from './Word/designSettings/WordListSet';
 import client from '../lib/api/client';
+
 
 const BoardContainer = styled.div` // 헤더를 제외한 부분 스타일
     width: 100%;
@@ -46,32 +48,21 @@ const wordListMaxLen = 6;
 let isFinished = false;
 let listIndex = 0;
 let keyState = {};
+let submitNickname = false;
 
 const winningStatement = ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Phew'];
 
-const Board = () => {
+const MakerBoard = () => {
     const [word, setWord] = useState([]);
     const [wordList, setWordList] = useState([]);
     const [wordState, setWordState] = useState('');
-    const [message, setMessage] = useState(null);
     const [wordCorrect, setWordCorrect] = useState('');
+    const [message, setMessage] = useState(null);
+    const [lineSet, setLineSet] = useState(oneLine);
 
-    useEffect(() => { // 처음 렌더링될 때 실행
-        client.get('/word')
-            .then( res => {
-                setWordCorrect(res.data.wordCorrect);
-                setWordList(res.data.wordList);
-                keyState = res.data.keyState;
-            })
+    useEffect(() => {
+        setMessage('Enter your nickname!');
     }, []);
-
-    useEffect(() => { // wordList가 바뀔 때마다 listIndex와 isFinished 초기화
-        listIndex = wordList.length;
-        if ( listIndex > 0 ) {
-            if ( wordList[listIndex-1][0].state === 'all-correct' )
-                isFinished = true;
-        }
-    }, [wordList]);
 
     const ColoringWord = ( word, wordCorrect ) => { // word 상태 및 keyState 업데이트 함수
         let letterCorrectCounts = 0;
@@ -116,7 +107,7 @@ const Board = () => {
     };
 
     const onClick = e => { // 키를 눌렀을 때 실행되는 함수
-        if ( listIndex === wordListMaxLen || isFinished )
+        if ( isFinished )
                 return;
         if ( e.target.innerText === 'ENTER') { // ENTER를 눌렀을 경우
             if ( word.length < wordMaxLen ) { 
@@ -125,40 +116,67 @@ const Board = () => {
                 setTimeout(() => {setWordState(''); setMessage(null);}, 500);
                 return;
             }
+            if ( submitNickname === false ) {
+                submitNickname = true;
 
-            const wordText = word.map(letter => letter.text).join('');
-            client.post(`/word/exist`, { word: wordText }) // 단어 존재 여부 검증
-                .then( res => {
-                    if ( res.data.exist === false ) {
-                        setMessage('Not in word list');
-                        setWordState('not-word');
-                        setTimeout(() => {setWordState(''); setMessage(null);}, 500);
-                    }
-                    else {
-                        setWordList([
-                            ...wordList,
-                            ColoringWord(word, wordCorrect),
-                        ]);
-                        listIndex++;
-                        client.post('/word/add', { newWord: word, keyState: keyState }) // 입력한 단어 및 키 상태 서버에 등록
-                            .catch(error => {
-                                console.log(error);
-                            })
+                // 닉네임 서버로 보내기 추가
+                // 닉네임 중복 판별 추가
+                
+                for( let i = 0 ; i < wordMaxLen ; i++ ) {
+                    word[i].state = 'correct';
+                }
+                setWordList([
+                    ...wordList,
+                    word,
+                ]);
+                
+                setTimeout(() => {
+                    setWord([]);
+                    setWordList([]);
+                    setTimeout(() => {
+                        setLineSet(sixLines);
                         
-                        if ( isFinished )
-                            return;
-            
-                        if ( listIndex === wordListMaxLen ) {
-                            setTimeout( () => {
-                                setMessage(wordCorrect);
-                                setTimeout(() => setMessage(null), 2000);
-                            }, 2000);
+                        setMessage('Enter the word!');
+                    }, 2000);
+                    
+                }, 2000);
+            }
+            else {
+                const wordText = word.map(letter => letter.text).join('');
+                client.post(`/word/exist`, { word: wordText }) // 단어 존재 여부 검증
+                    .then( res => {
+                        if ( res.data.exist === false ) {
+                            setMessage('Not in word list');
+                            setWordState('not-word');
+                            setTimeout(() => {setWordState(''); setMessage(null);}, 500);
                         }
-                        setWord([]);
-                    }
-                })
+                        else {
+                            setWordList([
+                                ...wordList,
+                                ColoringWord(word, wordCorrect),
+                            ]);
+                            listIndex++;
+                            client.post('/word/add', { newWord: word, keyState: keyState }) // 입력한 단어 및 키 상태 서버에 등록
+                                .catch(error => {
+                                    console.log(error);
+                                })
+                            
+                            if ( isFinished )
+                                return;
+                
+                            if ( listIndex === wordListMaxLen ) {
+                                setTimeout( () => {
+                                    setMessage(wordCorrect);
+                                    setTimeout(() => setMessage(null), 2000);
+                                }, 2000);
+                            }
+                            setWord([]);
+                        }
+                    })
+            }
             return;
-        } 
+        }
+        setMessage(null);
         if ( e.target.innerText === BACK ) {
             if ( word.length === 0 )
                 return;
@@ -177,11 +195,11 @@ const Board = () => {
         <BoardContainer>
             <Message message={message}>{message}</Message>
             <BoardBlock>
-                <WordList word={word} wordState={wordState} wordList={wordList} listIndex={listIndex}/>
+                <WordList lineSet={lineSet} word={word} wordState={wordState} wordList={wordList} listIndex={listIndex}/>
             </BoardBlock>
             <Keyboard onClick={onClick} keyState={keyState}/>
         </BoardContainer>
     );
 };
 
-export default Board;
+export default MakerBoard;

@@ -44,7 +44,7 @@ const FrontBlock = styled.div` // 앞면
     box-sizing: border-box;
     backface-visibility: hidden;
     border: ${ props => 
-        ((props.state === 'blank' || props.state === 'init') &&  `2px solid ${bright_gray}`) ||
+        (props.state === 'blank' &&  `2px solid ${bright_gray}`) ||
         `2px solid ${dark_gray}`
     };
     color: ${black};

@@ -40,7 +40,6 @@ const Message = styled.div` // 알림 박스 스타일
 `;
 
 const wordMaxLen = 5;
-const wordListMaxLen = 6;
 
 let isFinished = false;
 let submitNickname = false;
