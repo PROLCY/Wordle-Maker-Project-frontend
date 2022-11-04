@@ -60,9 +60,28 @@ const MakerBoard = () => {
     const [message, setMessage] = useState(null);
     const [lineSet, setLineSet] = useState(oneLine);
 
-    useEffect(() => {
+    useEffect(() => { // 렌더링될 때
         setMessage('Enter your nickname!');
     }, []);
+
+    useEffect(() => { // wordList가 바뀔 때 listIndex와 isFinished 초기화
+        listIndex = wordList.length;
+        if ( listIndex > 0 ) {
+            if ( wordList[listIndex-1][0].state === 'all-correct' )
+                isFinished = true;
+        }
+    }, [wordList]);
+
+    useEffect(() => { // WordList가 6줄이 될 때 기존 wordList 정보 요청
+        if ( lineSet === sixLines ) {
+            client.get('/solve/correct')
+            .then ( res => {
+                setWordCorrect(res.data.wordCorrect);
+                setWordList(res.data.wordList);
+                keyState = res.data.keyState;
+            })
+        }        
+    }, [lineSet]);
 
     const ColoringWord = ( word, wordCorrect ) => { // word 상태 및 keyState 업데이트 함수
         let letterCorrectCounts = 0;
@@ -92,16 +111,8 @@ const MakerBoard = () => {
         }
 
         if ( letterCorrectCounts === wordLen ) { // 정답 단어를 맞췄을 경우
-            isFinished = true;
-
             for ( let i = 0 ; i < wordMaxLen ; i++ )
                 word[i].state = 'all-correct';
-            setWord([]);
-
-            setTimeout( () => { // 성공 메시지 띄우기
-                setMessage(winningStatement[listIndex-1]);
-                setTimeout(() => setMessage(null), 2000);
-            }, 2000);
         }
         return word;
     };
@@ -116,7 +127,7 @@ const MakerBoard = () => {
                 setTimeout(() => {setWordState(''); setMessage(null);}, 500);
                 return;
             }
-            if ( submitNickname === false ) {
+            if ( submitNickname === false ) { // 닉네임 제출
                 submitNickname = true;
 
                 // 닉네임 서버로 보내기 추가
@@ -131,11 +142,10 @@ const MakerBoard = () => {
                 ]);
                 
                 setTimeout(() => {
-                    setWord([]);
                     setWordList([]);
-                    setTimeout(() => {
+                    setWord([]);
+                    setTimeout(() => { // 6줄로 전환
                         setLineSet(sixLines);
-                        
                         setMessage('Enter the word!');
                     }, 2000);
                     
@@ -143,7 +153,7 @@ const MakerBoard = () => {
             }
             else {
                 const wordText = word.map(letter => letter.text).join('');
-                client.post(`/word/exist`, { word: wordText }) // 단어 존재 여부 검증
+                client.post(`/solve/exist`, { word: wordText }) // 단어 존재 여부 검증
                     .then( res => {
                         if ( res.data.exist === false ) {
                             setMessage('Not in word list');
@@ -151,15 +161,27 @@ const MakerBoard = () => {
                             setTimeout(() => {setWordState(''); setMessage(null);}, 500);
                         }
                         else {
+                            setWord(ColoringWord(word, wordCorrect));
                             setWordList([
                                 ...wordList,
-                                ColoringWord(word, wordCorrect),
+                                word,
                             ]);
                             listIndex++;
-                            client.post('/word/add', { newWord: word, keyState: keyState }) // 입력한 단어 및 키 상태 서버에 등록
+                            client.post('/solve/add', { newWord: word, keyState: keyState }) // 입력한 단어 및 키 상태 서버에 등록
                                 .catch(error => {
                                     console.log(error);
                                 })
+                            
+                            if ( word[0].state === 'all-correct' ) {
+                                setTimeout( () => { // 성공 메시지 띄우기
+                                    setMessage(winningStatement[listIndex-1]);
+                                    setTimeout(() => setMessage(null), 2000);
+                                }, 2000);
+                                isFinished = true;
+                            }
+                            setWord([]);
+
+                            
                             
                             if ( isFinished )
                                 return;

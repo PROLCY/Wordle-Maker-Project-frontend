@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import styled from 'styled-components';
-import Board from "../components/SolverBoard";
+import SolverBoard from "../components/SolverBoard";
 import Header from "../components/Header";
 
 const MainPageBlock = styled.div`
@@ -55,7 +55,7 @@ const SolverPage = () => {
                 <div className='modal-body'>content</div>
             </div>
             <Header onModal={onModal}/>
-            <Board />
+            <SolverBoard />
         </MainPageBlock>
     )
 }
