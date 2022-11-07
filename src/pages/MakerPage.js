@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import styled from 'styled-components';
-import Board from "../components/MakerBoard";
+import MakerBoard from "../components/MakerBoard";
 import Header from "../components/Header";
 
 const MainPageBlock = styled.div`
@@ -55,7 +55,7 @@ const MakerPage = () => {
                 <div className='modal-body'>content</div>
             </div>
             <Header onModal={onModal}/>
-            <Board />
+            <MakerBoard />
         </MainPageBlock>
     )
 }

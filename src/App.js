@@ -1,8 +1,8 @@
-import SolverPage from './pages/SolverPage';
+import MakerPage from './pages/MakerPage';
 
 const App = () => {
     return (
-        <SolverPage />
+        <MakerPage />
     )
 }
 

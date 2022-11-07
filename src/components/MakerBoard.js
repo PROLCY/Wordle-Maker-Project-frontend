@@ -3,6 +3,8 @@ import WordList from "./Word/WordList";
 import Keyboard from './Keyboard/Keyboard';
 import { useEffect, useState } from 'react';
 import { BACK } from './Keyboard/Keyboard';
+import { oneLine } from './Word/designSettings/WordListSet';
+import client from '../lib/api/client';
 
 const BoardContainer = styled.div` // 헤더를 제외한 부분 스타일
     width: 100%;
@@ -47,6 +49,9 @@ let submitWord = false;
 let listIndex = 0;
 let keyState = {};
 
+let nickname='';
+let correct_word='';
+
 const MakerBoard = () => {
     const [word, setWord] = useState([]);
     const [wordList, setWordList] = useState([]);
@@ -68,43 +73,64 @@ const MakerBoard = () => {
                 return;
             }
             if ( submitNickname === false ) {
-                submitNickname = true;
+                
+                for( let i = 0 ; i < wordMaxLen ; i++ )
+                    nickname += word[i].text;
+                
+                client.post('/make/duplicated', { nickname: nickname })
+                    .then( res => {
+                        if ( res.data === 'duplicated') {
+                            nickname = '';
+                            setMessage('It already exists!');
+                            setWordState('not-word');
+                            setTimeout(() => {setWordState(''); setMessage(null);}, 500);
+                            return;
+                        }
+                        else {
+                            submitNickname = true;
 
-                // 닉네임 서버로 보내기 추가
-                
-                for( let i = 0 ; i < wordMaxLen ; i++ ) {
-                    word[i].state = 'correct';
-                }
-                setWordList({
-                    ...wordList,
-                    word,
-                });
-                
-                setTimeout(() => {
-                    
-                    setWord([]);
-                    setWordList({
-                        word,
+                            for( let i = 0 ; i < wordMaxLen ; i++ ) {
+                                word[i].state = 'correct';
+                            }
+                            setWordList({
+                                ...wordList,
+                                word,
+                            });
+                            
+                            setTimeout(() => {
+                                
+                                setWord([]);
+                                setWordList({
+                                    word,
+                                });
+                                setMessage('Enter your word!')
+                            }, 2000);
+                        }
                     });
-                    setMessage('Enter your word!')
-                }, 2000);
             } else if ( submitWord === false ) {
                 submitWord = true;
                 isFinished = true;
 
-                // 입력한 단어(정답 단어) 서버로 보내기 추가
-
                 for( let i = 0 ; i < wordMaxLen ; i++ ) {
+                    correct_word += word[i].text;
                     word[i].state = 'correct';
                 }
                 setWordList({
                     ...wordList,
                     word,
                 });
+
+                client.post('/make/register', { 
+                    nickname: nickname, 
+                    correct_word: correct_word, 
+                })
+                    .then( res => {
+                        console.log(res);
+                    })
+
                 setTimeout(() => {
                     setMessage('Your Wordle was made!');
                 }, 2000);
-                
                 
                 // 만든 문제 링크 띄우기(모달 or 링크 복사 div)
                 
@@ -130,7 +156,7 @@ const MakerBoard = () => {
         <BoardContainer>
             <Message message={message}>{message}</Message>
             <BoardBlock>
-                <WordList word={word} wordState={wordState} wordList={wordList} listIndex={listIndex}/>
+                <WordList lineSet={oneLine} word={word} wordState={wordState} wordList={wordList} listIndex={listIndex}/>
             </BoardBlock>
             <Keyboard onClick={onClick} keyState={keyState}/>
         </BoardContainer>
