@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { BACK } from './Keyboard/Keyboard';
 import { oneLine, sixLines } from './Word/designSettings/WordListSet';
 import client from '../lib/api/client';
+import { useParams } from 'react-router-dom';
 
 
 const BoardContainer = styled.div` // 헤더를 제외한 부분 스타일
@@ -50,6 +51,8 @@ let listIndex = 0;
 let keyState = {};
 let submitNickname = false;
 
+let nickname='';
+
 const winningStatement = ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Phew'];
 
 const MakerBoard = () => {
@@ -59,6 +62,7 @@ const MakerBoard = () => {
     const [wordCorrect, setWordCorrect] = useState('');
     const [message, setMessage] = useState(null);
     const [lineSet, setLineSet] = useState(oneLine);
+    const params = useParams();
 
     useEffect(() => { // 렌더링될 때
         setMessage('Enter your nickname!');
@@ -74,11 +78,11 @@ const MakerBoard = () => {
 
     useEffect(() => { // WordList가 6줄이 될 때 기존 wordList 정보 요청
         if ( lineSet === sixLines ) {
-            client.get('/solve/correct')
+            client.get(`/solve/${params.maker}/correct`)
             .then ( res => {
                 setWordCorrect(res.data.wordCorrect);
-                setWordList(res.data.wordList);
-                keyState = res.data.keyState;
+                /*setWordList(res.data.wordList);
+                keyState = res.data.keyState;*/
             })
         }        
     }, [lineSet]);
@@ -128,28 +132,45 @@ const MakerBoard = () => {
                 return;
             }
             if ( submitNickname === false ) { // 닉네임 제출
-                submitNickname = true;
+                for( let i = 0 ; i < wordMaxLen ; i++ )
+                    nickname += word[i].text;
+                
+                client.post('/solve/duplicated', { nickname: nickname })
+                    .then( res => {
+                        if ( res.data === 'duplicated') {
+                            nickname = '';
+                            setMessage('It already exists!');
+                            setWordState('not-word');
+                            setTimeout(() => {setWordState(''); setMessage(null);}, 500);
+                            return;
+                        }
+                        else {
+                            submitNickname = true;
 
-                // 닉네임 서버로 보내기 추가
-                // 닉네임 중복 판별 추가
-                
-                for( let i = 0 ; i < wordMaxLen ; i++ ) {
-                    word[i].state = 'correct';
-                }
-                setWordList([
-                    ...wordList,
-                    word,
-                ]);
-                
-                setTimeout(() => {
-                    setWordList([]);
-                    setWord([]);
-                    setTimeout(() => { // 6줄로 전환
-                        setLineSet(sixLines);
-                        setMessage('Enter the word!');
-                    }, 2000);
-                    
-                }, 2000);
+                            for( let i = 0 ; i < wordMaxLen ; i++ ) {
+                                word[i].state = 'correct';
+                            }
+                            setWordList({
+                                ...wordList,
+                                word,
+                            });
+
+                            // solver 닉네임과 url을 함께 보내면서 등록 요청
+                            client.post('/solve/register', { 
+                                nickname: nickname, 
+                                url: `http://localhost:3000/solve/${params.maker}`, 
+                            })
+
+                            setTimeout(() => {
+                                setWordList([]);
+                                setWord([]);
+                                setTimeout(() => { // 6줄로 전환
+                                    setLineSet(sixLines);
+                                    setMessage('Enter the word!');
+                                }, 2000);
+                            }, 2000);
+                        }
+                    });
             }
             else {
                 const wordText = word.map(letter => letter.text).join('');

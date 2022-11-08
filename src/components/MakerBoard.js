@@ -125,12 +125,16 @@ const MakerBoard = () => {
                     correct_word: correct_word, 
                 })
                     .then( res => {
-                        console.log(res);
+                        console.log(res.data);
+                        setTimeout(() => {
+                            setMessage('Your Wordle was made!');
+                            setTimeout(() => {
+                                setMessage(res.data);
+                            }, 2000);
+                        }, 2000);
                     })
+                
 
-                setTimeout(() => {
-                    setMessage('Your Wordle was made!');
-                }, 2000);
                 
                 // 만든 문제 링크 띄우기(모달 or 링크 복사 div)
                 
