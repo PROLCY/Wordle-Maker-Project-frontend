@@ -108,36 +108,41 @@ const MakerBoard = () => {
                         }
                     });
             } else if ( submitWord === false ) {
-                submitWord = true;
-                isFinished = true;
 
-                for( let i = 0 ; i < wordMaxLen ; i++ ) {
-                    correct_word += word[i].text;
-                    word[i].state = 'correct';
-                }
+                correct_word = word.map(letter => letter.text).join('');
+
                 setWordList({
                     ...wordList,
                     word,
                 });
 
-                client.post('/make/register', { 
-                    nickname: nickname, 
-                    correct_word: correct_word, 
-                })
+                client.post('/make/exist', { word: correct_word })
                     .then( res => {
-                        console.log(res.data);
-                        setTimeout(() => {
-                            setMessage('Your Wordle was made!');
-                            setTimeout(() => {
-                                setMessage(res.data);
-                            }, 2000);
-                        }, 2000);
-                    })
-                
+                        if ( res.data.exist === false) {
+                            setMessage('Not in word list');
+                            setWordState('not-word');
+                            setTimeout(() => {setWordState(''); setMessage(null);}, 500);
+                        } else {
+                            submitWord = true;
+                            isFinished = true;
 
-                
-                // 만든 문제 링크 띄우기(모달 or 링크 복사 div)
-                
+                            for( let i = 0 ; i < wordMaxLen ; i++ )
+                                word[i].state = 'correct';
+
+                            client.post('/make/register', { 
+                                nickname: nickname, 
+                                correct_word: correct_word, 
+                            })
+                                .then( res => {
+                                    console.log(res.data);
+                                    setMessage('Your Wordle was made!');
+                                    setTimeout(() => {
+                                        setMessage(res.data);
+                                    }, 2000);
+                                })
+                            // 만든 문제 링크 띄우기(모달 or 링크 복사 div)
+                        }
+                    })
             }
             return;
         }

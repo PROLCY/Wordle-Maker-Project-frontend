@@ -180,8 +180,7 @@ const MakerBoard = () => {
                             setMessage('Not in word list');
                             setWordState('not-word');
                             setTimeout(() => {setWordState(''); setMessage(null);}, 500);
-                        }
-                        else {
+                        } else {
                             setWord(ColoringWord(word, wordCorrect));
                             setWordList([
                                 ...wordList,
