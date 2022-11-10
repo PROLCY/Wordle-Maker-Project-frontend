@@ -59,7 +59,25 @@ const MakerBoard = () => {
     const [message, setMessage] = useState(null);
 
     useEffect(() => {
-        setMessage('Enter your nickname!');
+        client.get('/make/')
+            .then( res => {
+                if ( res.data === 'no-session') {
+                    setMessage('Enter your nickname!');
+                }
+                else {
+                    const wordText = res.data.correct_word;
+                    let correct_word=[];
+                    for( let i = 0 ; i < wordMaxLen ; i++ ) {
+                        correct_word.push({
+                            text: wordText[i],
+                            state: 'correct'
+                        })
+                    }
+                    setWord(correct_word);
+                    setMessage(res.data.url);
+                    isFinished = true;
+                }
+            })
     }, []);
 
     const onClick = e => { // 키를 눌렀을 때 실행되는 함수
