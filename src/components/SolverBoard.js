@@ -65,8 +65,18 @@ const MakerBoard = () => {
     const params = useParams();
 
     useEffect(() => { // 렌더링될 때
-        setMessage('Enter your nickname!');
-    }, []);
+        client.get(`/solve/${params.maker}`)
+            .then( res => {
+                if ( res.data === 'no-session')
+                    setMessage('Enter your nickname!');
+                else {
+                    setLineSet(sixLines);
+                    setWordCorrect(res.data.wordCorrect);
+                    submitNickname = true;
+                    //setWordList(res.data.wordList);
+                }
+            })
+    }, [params, wordCorrect]);
 
     useEffect(() => { // wordList가 바뀔 때 listIndex와 isFinished 초기화
         listIndex = wordList.length;
@@ -75,17 +85,6 @@ const MakerBoard = () => {
                 isFinished = true;
         }
     }, [wordList]);
-
-    useEffect(() => { // WordList가 6줄이 될 때 기존 wordList 정보 요청
-        if ( lineSet === sixLines ) {
-            client.get(`/solve/${params.maker}/correct`)
-            .then ( res => {
-                setWordCorrect(res.data.wordCorrect);
-                /*setWordList(res.data.wordList);
-                keyState = res.data.keyState;*/
-            })
-        }        
-    }, [lineSet]);
 
     const ColoringWord = ( word, wordCorrect ) => { // word 상태 및 keyState 업데이트 함수
         let letterCorrectCounts = 0;
