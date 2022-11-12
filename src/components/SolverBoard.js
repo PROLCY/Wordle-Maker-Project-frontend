@@ -51,7 +51,7 @@ let listIndex = 0;
 let keyState = {};
 let submitNickname = false;
 
-let nickname='';
+let nickname = '';
 
 const winningStatement = ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Phew'];
 
@@ -72,19 +72,32 @@ const MakerBoard = () => {
                 else {
                     setLineSet(sixLines);
                     setWordCorrect(res.data.wordCorrect);
+                    keyState = res.data.keyState;
                     submitNickname = true;
-                    //setWordList(res.data.wordList);
+                    setTimeout(() => { setWordList(res.data.wordList); }, 1);
+                    
                 }
             })
-    }, [params, wordCorrect]);
+    }, [params]);
 
     useEffect(() => { // wordList가 바뀔 때 listIndex와 isFinished 초기화
         listIndex = wordList.length;
         if ( listIndex > 0 ) {
-            if ( wordList[listIndex-1][0].state === 'all-correct' )
+            if ( wordList[listIndex-1][0].state === 'all-correct' ) {
+                setTimeout( () => { // 성공 메시지 띄우기
+                    setMessage(winningStatement[listIndex-1]);
+                    setTimeout(() => setMessage(null), 2000);
+                }, 2000);
                 isFinished = true;
+            } else if ( listIndex === wordListMaxLen ) {
+                setTimeout( () => {
+                    setMessage(wordCorrect);
+                    setTimeout(() => setMessage(null), 2000);
+                }, 2000);
+                isFinished = true;
+            }
         }
-    }, [wordList]);
+    }, [wordList, wordCorrect]);
 
     const ColoringWord = ( word, wordCorrect ) => { // word 상태 및 keyState 업데이트 함수
         let letterCorrectCounts = 0;
@@ -134,7 +147,7 @@ const MakerBoard = () => {
                 for( let i = 0 ; i < wordMaxLen ; i++ )
                     nickname += word[i].text;
                 
-                client.post('/solve/duplicated', { nickname: nickname })
+                client.post(`/solve/${params.maker}/duplicated`, { nickname: nickname })
                     .then( res => {
                         if ( res.data === 'duplicated') {
                             nickname = '';
@@ -155,19 +168,20 @@ const MakerBoard = () => {
                             });
 
                             // solver 닉네임과 url을 함께 보내면서 등록 요청
-                            client.post('/solve/register', { 
+                            client.post(`/solve/${params.maker}/register`, { 
                                 nickname: nickname, 
-                                url: `http://localhost:3000/solve/${params.maker}`, 
                             })
-
-                            setTimeout(() => {
-                                setWordList([]);
-                                setWord([]);
-                                setTimeout(() => { // 6줄로 전환
-                                    setLineSet(sixLines);
-                                    setMessage('Enter the word!');
-                                }, 2000);
-                            }, 2000);
+                                .then( res => {
+                                    setTimeout(() => {
+                                        setWordList([]);
+                                        setWord([]);
+                                        setWordCorrect(res.data.wordCorrect);
+                                        setTimeout(() => { // 6줄로 전환
+                                            setLineSet(sixLines);
+                                            setMessage('Enter the word!');
+                                        }, 2000);
+                                    }, 2000);
+                                })
                         }
                     });
             }
@@ -186,7 +200,7 @@ const MakerBoard = () => {
                                 word,
                             ]);
                             listIndex++;
-                            client.post('/solve/add', { newWord: word, keyState: keyState }) // 입력한 단어 및 키 상태 서버에 등록
+                            client.post(`/solve/${params.maker}/add`, { newWord: word, keyState: keyState }) // 입력한 단어 및 키 상태 서버에 등록
                                 .catch(error => {
                                     console.log(error);
                                 })
@@ -204,14 +218,6 @@ const MakerBoard = () => {
                             
                             if ( isFinished )
                                 return;
-                
-                            if ( listIndex === wordListMaxLen ) {
-                                setTimeout( () => {
-                                    setMessage(wordCorrect);
-                                    setTimeout(() => setMessage(null), 2000);
-                                }, 2000);
-                            }
-                            setWord([]);
                         }
                     })
             }
