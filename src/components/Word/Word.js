@@ -40,7 +40,7 @@ const Word = props => {
     }
     return (
         <WordBlock wordState={props.wordState}>
-            {array.map(index => <Letter letter={RenderLetter(index)} index={index}></Letter>)}
+            {array.map(index => <Letter key={index} letter={RenderLetter(index)} index={index}></Letter>)}
         </WordBlock>
     );
 };

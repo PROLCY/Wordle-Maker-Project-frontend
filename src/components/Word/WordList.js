@@ -33,7 +33,7 @@ const WordList = props => {
     }
     return (
         <WordListBlock lineSet={lineSet}>
-            {array.map(index => <Word word={RenderWord(index)} wordState={RenderState(index)}></Word>)}
+            {array.map(index => <Word key={index} word={RenderWord(index)} wordState={RenderState(index)}></Word>)}
         </WordListBlock>
     );
 };

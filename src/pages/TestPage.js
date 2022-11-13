@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import styled from 'styled-components';
-import LoadBoard from "../components/LoadBoard";
+import TestBoard from "../components/testBoard";
 import Header from "../components/Header";
 
 const MainPageBlock = styled.div`
@@ -37,7 +37,7 @@ const MainPageBlock = styled.div`
 
 
 
-const LoadPage = () => {
+const TestPage = () => {
     const [modal, setModal] = useState(false);
     
     const onModal = () => {
@@ -55,9 +55,9 @@ const LoadPage = () => {
                 <div className='modal-body'>content</div>
             </div>
             <Header onModal={onModal}/>
-            <LoadBoard />
+            <TestBoard />
         </MainPageBlock>
     )
 }
 
-export default LoadPage;
+export default TestPage;

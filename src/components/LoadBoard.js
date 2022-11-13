@@ -3,6 +3,7 @@ import WordList from "./Word/WordList";
 import Keyboard from './Keyboard/Keyboard';
 import { useEffect, useState } from 'react';
 import { BACK } from './Keyboard/Keyboard';
+import { oneLine } from './Word/designSettings/WordListSet';
 import client from '../lib/api/client';
 
 const BoardContainer = styled.div` // 헤더를 제외한 부분 스타일
@@ -41,82 +42,46 @@ const Message = styled.div` // 알림 박스 스타일
 `;
 
 const wordMaxLen = 5;
-const wordListMaxLen = 6;
 
 let isFinished = false;
+let submitNickname = false;
+let submitWord = false;
 let listIndex = 0;
 let keyState = {};
 
-const winningStatement = ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Phew'];
+let nickname='';
+let correct_word='';
 
-const Board = () => {
+const LoadBoard = () => {
     const [word, setWord] = useState([]);
     const [wordList, setWordList] = useState([]);
     const [wordState, setWordState] = useState('');
     const [message, setMessage] = useState(null);
-    const [wordCorrect, setWordCorrect] = useState('');
 
-    useEffect(() => { // 처음 렌더링될 때 실행
-        client.get('/word')
+    useEffect(() => {
+        client.get('/load/')
             .then( res => {
-                setWordCorrect(res.data.wordCorrect);
-                setWordList(res.data.wordList);
-                keyState = res.data.keyState;
+                if ( res.data === 'no-session') {
+                    setMessage('Enter your nickname!');
+                }
+                else {
+                    const wordText = res.data.correct_word;
+                    let correct_word=[];
+                    for( let i = 0 ; i < wordMaxLen ; i++ ) {
+                        correct_word.push({
+                            text: wordText[i],
+                            state: 'correct'
+                        })
+                    }
+                    setWord(correct_word);
+                    setMessage(res.data.url);
+                    isFinished = true;
+                }
             })
     }, []);
 
-    useEffect(() => { // wordList가 바뀔 때마다 listIndex와 isFinished 초기화
-        listIndex = wordList.length;
-        if ( listIndex > 0 ) {
-            if ( wordList[listIndex-1][0].state === 'all-correct' )
-                isFinished = true;
-        }
-    }, [wordList]);
-
-    const ColoringWord = ( word, wordCorrect ) => { // word 상태 및 keyState 업데이트 함수
-        let letterCorrectCounts = 0;
-        const wordLen = word.length;
-
-        for ( let i = 0 ; i < wordLen ; i++ ) {
-            if ( wordCorrect[i] === word[i].text ) { // 문자와 위치가 wordCorrect와 일치하는 경우
-                word[i].state = 'correct';
-                keyState[wordCorrect[i]] = 'correct';
-                letterCorrectCounts++;
-                continue;
-            }
-            for ( let j = 0 ; j < wordLen ; j++) {
-                if ( wordCorrect[i] === word[j].text ) { // 문자가 wordCorrect에 있는 경우
-                    if ( word[j].state !== 'correct' )
-                        word[j].state = 'contained';
-                    if ( keyState[wordCorrect[i]] !== 'correct') 
-                        keyState[wordCorrect[i]] = 'contained';
-                    break;
-                }
-            }
-            if ( word[i].state === 'filled' ) { // 문자가 wordCorrect에 없는 경우
-                word[i].state = 'non-contained';
-                if ( keyState[word[i].text] === undefined )
-                    keyState[word[i].text] = 'non-contained';
-            }
-        }
-
-        if ( letterCorrectCounts === wordLen ) { // 정답 단어를 맞췄을 경우
-            isFinished = true;
-
-            for ( let i = 0 ; i < wordMaxLen ; i++ )
-                word[i].state = 'all-correct';
-            setWord([]);
-
-            setTimeout( () => { // 성공 메시지 띄우기
-                setMessage(winningStatement[listIndex-1]);
-                setTimeout(() => setMessage(null), 2000);
-            }, 2000);
-        }
-        return word;
-    };
-
     const onClick = e => { // 키를 눌렀을 때 실행되는 함수
-        if ( listIndex === wordListMaxLen || isFinished )
+        if ( isFinished )
                 return;
         if ( e.target.innerText === 'ENTER') { // ENTER를 눌렀을 경우
             if ( word.length < wordMaxLen ) { 
@@ -125,40 +90,81 @@ const Board = () => {
                 setTimeout(() => {setWordState(''); setMessage(null);}, 500);
                 return;
             }
-
-            const wordText = word.map(letter => letter.text).join('');
-            client.post(`/word/exist`, { word: wordText }) // 단어 존재 여부 검증
-                .then( res => {
-                    if ( res.data.exist === false ) {
-                        setMessage('Not in word list');
-                        setWordState('not-word');
-                        setTimeout(() => {setWordState(''); setMessage(null);}, 500);
-                    }
-                    else {
-                        setWordList([
-                            ...wordList,
-                            ColoringWord(word, wordCorrect),
-                        ]);
-                        listIndex++;
-                        client.post('/word/add', { newWord: word, keyState: keyState }) // 입력한 단어 및 키 상태 서버에 등록
-                            .catch(error => {
-                                console.log(error);
-                            })
-                        
-                        if ( isFinished )
+            if ( submitNickname === false ) {
+                
+                for( let i = 0 ; i < wordMaxLen ; i++ )
+                    nickname += word[i].text;
+                
+                client.post('/load/exist', { nickname: nickname })
+                    .then( res => {
+                        if ( res.data === false) {
+                            nickname = '';
+                            setMessage("It doesn't exist!");
+                            setWordState('not-word');
+                            setTimeout(() => {setWordState(''); setMessage(null);}, 500);
                             return;
-            
-                        if ( listIndex === wordListMaxLen ) {
-                            setTimeout( () => {
-                                setMessage(wordCorrect);
-                                setTimeout(() => setMessage(null), 2000);
+                        }
+                        else {
+                            submitNickname = true;
+
+                            for( let i = 0 ; i < wordMaxLen ; i++ ) {
+                                word[i].state = 'correct';
+                            }
+                            setWordList({
+                                ...wordList,
+                                word,
+                            });
+                            
+                            setTimeout(() => {
+                                
+                                setWord([]);
+                                setWordList({
+                                    word,
+                                });
+                                setMessage('Enter your word!')
                             }, 2000);
                         }
-                        setWord([]);
-                    }
-                })
+                    });
+            } else if ( submitWord === false ) {
+
+                correct_word = word.map(letter => letter.text).join('');
+
+                setWordList({
+                    ...wordList,
+                    word,
+                });
+
+                client.post('/make/exist', { word: correct_word })
+                    .then( res => {
+                        if ( res.data.exist === false) {
+                            setMessage('Not in word list');
+                            setWordState('not-word');
+                            setTimeout(() => {setWordState(''); setMessage(null);}, 500);
+                        } else {
+                            submitWord = true;
+                            isFinished = true;
+
+                            for( let i = 0 ; i < wordMaxLen ; i++ )
+                                word[i].state = 'correct';
+
+                            client.post('/make/register', { 
+                                nickname: nickname, 
+                                correct_word: correct_word, 
+                            })
+                                .then( res => {
+                                    console.log(res.data);
+                                    setMessage('Your Wordle was made!');
+                                    setTimeout(() => {
+                                        setMessage(res.data);
+                                    }, 2000);
+                                })
+                            // 만든 문제 링크 띄우기(모달 or 링크 복사 div)
+                        }
+                    })
+            }
             return;
-        } 
+        }
+        setMessage(null);
         if ( e.target.innerText === BACK ) {
             if ( word.length === 0 )
                 return;
@@ -177,11 +183,11 @@ const Board = () => {
         <BoardContainer>
             <Message message={message}>{message}</Message>
             <BoardBlock>
-                <WordList word={word} wordState={wordState} wordList={wordList} listIndex={listIndex}/>
+                <WordList lineSet={oneLine} word={word} wordState={wordState} wordList={wordList} listIndex={listIndex}/>
             </BoardBlock>
             <Keyboard onClick={onClick} keyState={keyState}/>
         </BoardContainer>
     );
 };
 
-export default Board;
+export default LoadBoard;
