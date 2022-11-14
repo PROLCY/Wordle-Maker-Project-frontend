@@ -10,7 +10,8 @@ const BoardContainer = styled.div` // 헤더를 제외한 부분 스타일
     margin: 0 auto;
     height: calc(100% - 65px);
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
+    justify-content: center;
 `;
 
 const BoardBlock = styled.div` // 단어 리스트 스타일
@@ -20,6 +21,38 @@ const BoardBlock = styled.div` // 단어 리스트 스타일
     align-items: center;
     flex-direction: row;
     overflow: hidden;
+`;
+
+const ButtonBlock = styled.div`
+    display: flex;
+    justify-content: center;
+    height: 100px;
+    align-items: center;
+`;
+
+const Button = styled.div`
+    line-height: 80px;
+    margin: 30px 20px;
+    padding: 1px 1px;
+    font-weight: bold;
+    font-size: 80px;
+    border: none;
+    text-align: center;
+    justify-content: cnenter;
+    background-color: white;
+    color: ${props => 
+        (props.id === 'prev' && (props.pageIndex === 1) && '#d3d3d3') ||
+        (props.id === 'next' && (props.listLength <= props.pageIndex * 4) && '#d3d3d3') ||
+        'black'
+    };
+    
+    :hover {
+        cursor: ${props => 
+            (props.id === 'prev' && (props.pageIndex === 1) && 'default') ||
+            (props.id === 'next' && (props.listLength <= props.pageIndex * 4) && 'default') ||
+            'pointer'
+        };
+    }
 `;
 
 const Message = styled.div` // 알림 박스 스타일
@@ -55,8 +88,9 @@ const TestBoard = () => {
     const [word, setWord] = useState([]);
     const [wordList, setWordList] = useState([]);
     const [wordState, setWordState] = useState('');
-    const [solvers, setSolvers] = useState([]);
     const [message, setMessage] = useState(null);
+    const [solvers, setSolvers] = useState([]);
+    const [pageIndex, setPageIndex] = useState(1);
 
     useEffect(() => {
         client.get('/load/')
@@ -65,8 +99,21 @@ const TestBoard = () => {
             })
     }, []);
 
-    const solversList = solvers.map( (solver, index) => 
+    const onClick = e => {
+        if ( e.target.id === 'next' ) {
+            if ( solvers.length > pageIndex * 4 )
+                setPageIndex(pageIndex + 1);
+        }
+            
+        else if ( e.target.id === 'prev' ) {
+            if ( pageIndex > 1 )
+                setPageIndex(pageIndex - 1);
+        }
+    };
+
+    const solversList = solvers.slice((pageIndex-1)*4, pageIndex*4).map(       (solver, index) => 
         <WordList key={index} lineSet={sevenLines} word={word} wordState={wordState} wordList={solver.nickname.concat(solver.wordList)}/>);
+
 
     return (
         <BoardContainer>
@@ -74,6 +121,10 @@ const TestBoard = () => {
             <BoardBlock>
                 {solversList.length === 0 ? "There is no solver yet" : solversList}
             </BoardBlock>
+            <ButtonBlock>
+                <Button id='prev' pageIndex={pageIndex} listLength={solvers.length} onClick={onClick}>&lt;</Button>
+                <Button id='next' pageIndex={pageIndex} listLength={solvers.length} onClick={onClick}>&gt;</Button>
+            </ButtonBlock>
         </BoardContainer>
     );
 };
