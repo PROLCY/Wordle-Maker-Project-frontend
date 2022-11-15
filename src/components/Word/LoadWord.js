@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import Letter from './Letter';
+import LoadLetter from './LoadLetter';
 
 const WordBlock = styled.div`
     display: grid;
@@ -38,7 +38,7 @@ const Word = props => {
         else 
             return props.word[index];
     }
-    const letterList = array.map(index => <Letter key={index} letter={RenderLetter(index)} index={index}></Letter>);
+    const letterList = array.map(index => <LoadLetter key={index} letter={RenderLetter(index)} index={index}></LoadLetter>);
     return (
         <WordBlock wordState={props.wordState}>
             {letterList}
