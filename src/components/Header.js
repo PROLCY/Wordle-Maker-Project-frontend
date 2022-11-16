@@ -43,7 +43,7 @@ const Header = props => {
     return (
         <HeaderBlcok>
             <LeftSpace />
-            <Title>Wordle Maker</Title>
+            <Title>{props.title}</Title>
             <Buttons />
         </HeaderBlcok>
     )

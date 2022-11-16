@@ -26,9 +26,9 @@ const Keyboard = props => {
     const second_letters=['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'];
     const third_letters=['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', BACK];
 
-    const keyListFirst = first_letters.map(letter => <Key letter={letter} onClick={props.onClick} state={props.keyState[letter]}/>);
-    const keyListSecond = second_letters.map(letter => <Key letter={letter} onClick={props.onClick} state={props.keyState[letter]}/>);
-    const keyListThird = third_letters.map(letter => <Key letter={letter} onClick={props.onClick} state={props.keyState[letter]}/>);
+    const keyListFirst = first_letters.map((letter, index) => <Key key={index} letter={letter} onClick={props.onClick} state={props.keyState[letter]}/>);
+    const keyListSecond = second_letters.map((letter, index) => <Key key={index} letter={letter} onClick={props.onClick} state={props.keyState[letter]}/>);
+    const keyListThird = third_letters.map((letter, index) => <Key key={index} letter={letter} onClick={props.onClick} state={props.keyState[letter]}/>);
 
     return (
         <KeyboardBlcok>

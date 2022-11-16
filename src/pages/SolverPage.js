@@ -54,7 +54,7 @@ const SolverPage = () => {
             <div className='modal' onClick={offModal}>
                 <div className='modal-body'>content</div>
             </div>
-            <Header onModal={onModal}/>
+            <Header onModal={onModal} title={'Wordle Solver'}/>
             <SolverBoard />
         </MainPageBlock>
     )

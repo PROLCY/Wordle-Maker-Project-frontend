@@ -55,7 +55,7 @@ let nickname = '';
 
 const winningStatement = ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Phew'];
 
-const MakerBoard = () => {
+const SolverBoard = () => {
     const [word, setWord] = useState([]);
     const [wordList, setWordList] = useState([]);
     const [wordState, setWordState] = useState('');
@@ -74,7 +74,7 @@ const MakerBoard = () => {
                     setWordCorrect(res.data.wordCorrect);
                     keyState = res.data.keyState;
                     submitNickname = true;
-                    setTimeout(() => { setWordList(res.data.wordList); }, 1);
+                    setTimeout(() => { setWordList(res.data.wordList); }, 100);
                     
                 }
             })
@@ -140,7 +140,7 @@ const MakerBoard = () => {
             if ( word.length < wordMaxLen ) { 
                 setMessage('Not enough letters');
                 setWordState('not-word');
-                setTimeout(() => {setWordState(''); setMessage(null);}, 500);
+                setTimeout(() => {setWordState(''); setMessage(null);}, 100);
                 return;
             }
             if ( submitNickname === false ) { // 닉네임 제출
@@ -249,4 +249,4 @@ const MakerBoard = () => {
     );
 };
 
-export default MakerBoard;
+export default SolverBoard;

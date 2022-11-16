@@ -88,12 +88,22 @@ const LoadBoard = () => {
     const [wordList, setWordList] = useState([]);
     const [wordState, setWordState] = useState('load');
     const [message, setMessage] = useState(null);
-    const [submitNickname, setSubmitNickname] = useState(false);
+    const [submitNickname, setSubmitNickname] = useState(0);
     const [solvers, setSolvers] = useState([]);
     const [pageIndex, setPageIndex] = useState(1);
 
     useEffect(() => {
-
+        client.get('/load/')
+            .then( res => {
+                if ( res.data === 'no-session') {
+                    setSubmitNickname(false);
+                    setMessage('Enter your nickname!');
+                }
+                else {
+                    setSubmitNickname(true);
+                    setSolvers(res.data);
+                }
+            })
     }, []);
 
     const onClick = e => { // 키를 눌렀을 때 실행되는 함수
@@ -135,7 +145,7 @@ const LoadBoard = () => {
                                 });
                                 setSubmitNickname(true);
                             }, 2000);
-                            client.get('/load/')
+                            client.post('/load/', { makerNickname: nickname })
                                 .then( res => {
                                     setSolvers(res.data);
                                 })
@@ -182,12 +192,11 @@ const LoadBoard = () => {
                 }
             </BoardBlock>
             {
-                submitNickname === false ?
-                <Keyboard onClick={onClick} keyState={keyState}/> :
-                <ButtonBlock>
+                (submitNickname === false && <Keyboard onClick={onClick} keyState={keyState}/>) ||
+                (submitNickname === true && <ButtonBlock>
                     <Button id='prev' pageIndex={pageIndex} listLength={solvers.length} onClick={onClick}>&lt;</Button>
                     <Button id='next' pageIndex={pageIndex} listLength={solvers.length} onClick={onClick}>&gt;</Button>
-                </ButtonBlock>
+                </ButtonBlock>)
             }
 
         </BoardContainer>
