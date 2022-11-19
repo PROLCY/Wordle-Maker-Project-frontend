@@ -121,6 +121,9 @@ const LoadBoard = () => {
             console.log(data);
             setSolvers(data);
         });
+        socket.on('delete', function(data) {
+            console.log(data);
+        });
         return;
     };
 

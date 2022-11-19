@@ -6,6 +6,7 @@ import { BACK } from './Keyboard/Keyboard';
 import { oneLine, sixLines } from './Word/designSettings/WordListSet';
 import client from '../lib/api/client';
 import { useParams } from 'react-router-dom';
+import io from 'socket.io-client';
 
 
 const BoardContainer = styled.div` // 헤더를 제외한 부분 스타일
@@ -55,6 +56,17 @@ let nickname = '';
 
 const winningStatement = ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Phew'];
 
+const connectSocket = ( makerNickname ) => {
+    const socket = io('http://localhost:4000/loader', {
+        transports: ['websocket'],
+        query: {
+            maker: makerNickname,
+        }
+    });
+    return socket;
+};
+
+let socket;
 const SolverBoard = () => {
     const [word, setWord] = useState([]);
     const [wordList, setWordList] = useState([]);
@@ -65,6 +77,7 @@ const SolverBoard = () => {
     const params = useParams();
 
     useEffect(() => { // 렌더링될 때
+        socket = connectSocket(params.maker);
         client.get(`/solve/${params.maker}`)
             .then( res => {
                 if ( res.data === 'no-session')
@@ -98,6 +111,16 @@ const SolverBoard = () => {
             }
         }
     }, [wordList, wordCorrect]);
+
+    useEffect(() => {
+        console.log(word);
+        if ( submitNickname && word !== [] ) {
+            client.post(`/solve/${params.maker}/typing`, { newWord: word, listIndex: listIndex }) // 입력한 단어 및 키 상태 서버에 등록
+                .catch(error => {
+                    console.log(error);
+                })
+        }
+    }, [word, params]);
 
     const ColoringWord = ( word, wordCorrect ) => { // word 상태 및 keyState 업데이트 함수
         let letterCorrectCounts = 0;
@@ -200,7 +223,8 @@ const SolverBoard = () => {
                                 word,
                             ]);
                             listIndex++;
-                            client.post(`/solve/${params.maker}/add`, { newWord: word, keyState: keyState }) // 입력한 단어 및 키 상태 서버에 등록
+
+                            client.post(`/solve/${params.maker}/enter`, { newWord: word, keyState }) // 입력한 단어 및 키 상태 서버에 등록
                                 .catch(error => {
                                     console.log(error);
                                 })
@@ -230,7 +254,7 @@ const SolverBoard = () => {
             setWord(word.slice(0, -1));
             return;
         }
-        if ( word.length > wordMaxLen )
+        if ( word.length >= wordMaxLen )
             return;
         setWord(word.concat({
             text: e.target.innerText,
