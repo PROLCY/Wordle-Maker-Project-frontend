@@ -121,8 +121,21 @@ const LoadBoard = () => {
             console.log(data);
             setSolvers(data);
         });
-        socket.on('delete', function(data) {
+        socket.on('typing', function(data) {
             console.log(data);
+            console.log('solvers', solvers);
+            const solver = solvers.find(solver => 
+                solver.nickname[0].map(info => info.text).join('') === data.nickname
+            );
+            console.log('solver', solver);
+            const solverIndex = solvers.indexOf(solver);
+            console.log('solverIndex', solverIndex);
+            if ( solver.wordList.length === data.listIndex )
+                console.log(1);
+            //setSolvers(solvers.splice(solverIndex, 1, solvers[solverIndex].wordList.push(data.word)));
+            else 
+                console.log(2);
+                //setSolvers(solvers.splice(solverIndex, 1, solvers[solverIndex].wordList.splice(data.listIndex, 1, data.word)));
         });
         return;
     };

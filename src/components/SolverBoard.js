@@ -67,6 +67,7 @@ const connectSocket = ( makerNickname ) => {
 };
 
 let socket;
+
 const SolverBoard = () => {
     const [word, setWord] = useState([]);
     const [wordList, setWordList] = useState([]);
@@ -83,12 +84,12 @@ const SolverBoard = () => {
                 if ( res.data === 'no-session')
                     setMessage('Enter your nickname!');
                 else {
+                    nickname = res.data.nickname;
                     setLineSet(sixLines);
                     setWordCorrect(res.data.wordCorrect);
                     keyState = res.data.keyState;
                     submitNickname = true;
                     setTimeout(() => { setWordList(res.data.wordList); }, 100);
-                    
                 }
             })
     }, [params]);
@@ -115,10 +116,14 @@ const SolverBoard = () => {
     useEffect(() => {
         console.log(word);
         if ( submitNickname && word !== [] ) {
-            client.post(`/solve/${params.maker}/typing`, { newWord: word, listIndex: listIndex }) // 입력한 단어 및 키 상태 서버에 등록
-                .catch(error => {
-                    console.log(error);
-                })
+            socket.emit('typing', {
+                room: params.maker,
+                info: {
+                    nickname: nickname,
+                    word: word,
+                    listIndex: listIndex,
+                }
+            });
         }
     }, [word, params]);
 
@@ -163,7 +168,7 @@ const SolverBoard = () => {
             if ( word.length < wordMaxLen ) { 
                 setMessage('Not enough letters');
                 setWordState('not-word');
-                setTimeout(() => {setWordState(''); setMessage(null);}, 100);
+                setTimeout(() => {setWordState(''); setMessage(null);}, 500);
                 return;
             }
             if ( submitNickname === false ) { // 닉네임 제출
