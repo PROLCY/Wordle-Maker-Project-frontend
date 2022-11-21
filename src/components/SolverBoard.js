@@ -48,7 +48,6 @@ const wordMaxLen = 5;
 const wordListMaxLen = 6;
 
 let isFinished = false;
-let listIndex = 0;
 let keyState = {};
 let submitNickname = false;
 
@@ -75,6 +74,7 @@ const SolverBoard = () => {
     const [wordCorrect, setWordCorrect] = useState('');
     const [message, setMessage] = useState(null);
     const [lineSet, setLineSet] = useState(oneLine);
+    const [listIndex, setListIndex] = useState(0);
     const params = useParams();
 
     useEffect(() => { // 렌더링될 때
@@ -95,14 +95,24 @@ const SolverBoard = () => {
     }, [params]);
 
     useEffect(() => { // wordList가 바뀔 때 listIndex와 isFinished 초기화
-        listIndex = wordList.length;
+        setListIndex(wordList.length);
+        
+    }, [wordList, wordCorrect]);
+
+    useEffect(() => {
         if ( listIndex > 0 ) {
-            if ( wordList[listIndex-1][0].state === 'all-correct' ) {
-                setTimeout( () => { // 성공 메시지 띄우기
-                    setMessage(winningStatement[listIndex-1]);
-                    setTimeout(() => setMessage(null), 2000);
-                }, 2000);
-                isFinished = true;
+            if ( wordList[listIndex - 1].length !== 0) {
+                if ( wordList[listIndex - 1][0].state === 'filled' )
+                {
+                    setWord(wordList[listIndex - 1]);
+                    setListIndex(listIndex - 1);
+                } else if ( wordList[listIndex-1][0].state === 'all-correct' ) {
+                    setTimeout( () => { // 성공 메시지 띄우기
+                        setMessage(winningStatement[listIndex-1]);
+                        setTimeout(() => setMessage(null), 2000);
+                    }, 2000);
+                    isFinished = true;
+                } 
             } else if ( listIndex === wordListMaxLen ) {
                 setTimeout( () => {
                     setMessage(wordCorrect);
@@ -111,19 +121,15 @@ const SolverBoard = () => {
                 isFinished = true;
             }
         }
-    }, [wordList, wordCorrect]);
+    }, [listIndex]);
 
     useEffect(() => {
         console.log(word);
         if ( submitNickname && word !== [] ) {
-            socket.emit('typing', {
-                room: params.maker,
-                info: {
-                    nickname: nickname,
-                    word: word,
-                    listIndex: listIndex,
-                }
-            });
+            client.post(`/solve/${params.maker}/typing`, { newWord: word, listIndex: listIndex }) // 입력한 단어 및 키 상태 서버에 등록
+                .catch(error => {
+                    console.log(error);
+                })
         }
     }, [word, params]);
 
@@ -185,11 +191,10 @@ const SolverBoard = () => {
                             return;
                         }
                         else {
-                            submitNickname = true;
-
-                            for( let i = 0 ; i < wordMaxLen ; i++ ) {
+                            /*for( let i = 0 ; i < wordMaxLen ; i++ ) {
                                 word[i].state = 'correct';
-                            }
+                            }*/
+                            setWord(word.map(letter => letter.state = 'correct'));
                             setWordList({
                                 ...wordList,
                                 word,
@@ -210,6 +215,7 @@ const SolverBoard = () => {
                                         }, 2000);
                                     }, 2000);
                                 })
+                            submitNickname = true;
                         }
                     });
             }
@@ -227,7 +233,7 @@ const SolverBoard = () => {
                                 ...wordList,
                                 word,
                             ]);
-                            listIndex++;
+                            setListIndex(listIndex + 1);
 
                             client.post(`/solve/${params.maker}/enter`, { newWord: word, keyState }) // 입력한 단어 및 키 상태 서버에 등록
                                 .catch(error => {
@@ -243,8 +249,6 @@ const SolverBoard = () => {
                             }
                             setWord([]);
 
-                            
-                            
                             if ( isFinished )
                                 return;
                         }
