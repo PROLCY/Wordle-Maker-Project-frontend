@@ -65,8 +65,6 @@ const connectSocket = ( makerNickname ) => {
     return socket;
 };
 
-let socket;
-
 const SolverBoard = () => {
     const [word, setWord] = useState([]);
     const [wordList, setWordList] = useState([]);
@@ -78,7 +76,7 @@ const SolverBoard = () => {
     const params = useParams();
 
     useEffect(() => { // 렌더링될 때
-        socket = connectSocket(params.maker);
+        connectSocket(params.maker);
         client.get(`/solve/${params.maker}`)
             .then( res => {
                 if ( res.data === 'no-session')
@@ -89,48 +87,30 @@ const SolverBoard = () => {
                     setWordCorrect(res.data.wordCorrect);
                     keyState = res.data.keyState;
                     submitNickname = true;
-                    setTimeout(() => { setWordList(res.data.wordList); }, 100);
+                    setTimeout(() => { 
+                        setWordList(res.data.wordList);
+                        console.log("res.wordList", res.data.wordList);
+                        setWord(res.data.lastWord);
+                        console.log("res.lastWord:", res.data.lastWord);
+                        setListIndex(res.data.listIndex);
+                    }, 100);
                 }
             })
     }, [params]);
 
-    useEffect(() => { // wordList가 바뀔 때 listIndex와 isFinished 초기화
-        setListIndex(wordList.length);
+    useEffect(() => {
+        console.log("word2:", word);
+        console.log('listIndex:', listIndex);
         
-    }, [wordList, wordCorrect]);
-
-    useEffect(() => {
-        if ( listIndex > 0 ) {
-            if ( wordList[listIndex - 1].length !== 0) {
-                if ( wordList[listIndex - 1][0].state === 'filled' )
-                {
-                    setWord(wordList[listIndex - 1]);
-                    setListIndex(listIndex - 1);
-                } else if ( wordList[listIndex-1][0].state === 'all-correct' ) {
-                    setTimeout( () => { // 성공 메시지 띄우기
-                        setMessage(winningStatement[listIndex-1]);
-                        setTimeout(() => setMessage(null), 2000);
-                    }, 2000);
-                    isFinished = true;
-                } 
-            } else if ( listIndex === wordListMaxLen ) {
-                setTimeout( () => {
-                    setMessage(wordCorrect);
-                    setTimeout(() => setMessage(null), 2000);
-                }, 2000);
-                isFinished = true;
-            }
-        }
-    }, [listIndex]);
-
-    useEffect(() => {
-        console.log(word);
-        if ( submitNickname && word !== [] ) {
+        //console.log(wordList.splice(listIndex, 0, word));
+        if ( submitNickname && word.length !== 0 ) {
+            setWordList(wordList.splice(listIndex, 0, word));
             client.post(`/solve/${params.maker}/typing`, { newWord: word, listIndex: listIndex }) // 입력한 단어 및 키 상태 서버에 등록
                 .catch(error => {
                     console.log(error);
                 })
         }
+        console.log('wordList:', wordList);
     }, [word, params]);
 
     const ColoringWord = ( word, wordCorrect ) => { // word 상태 및 keyState 업데이트 함수
@@ -191,15 +171,14 @@ const SolverBoard = () => {
                             return;
                         }
                         else {
-                            /*for( let i = 0 ; i < wordMaxLen ; i++ ) {
-                                word[i].state = 'correct';
-                            }*/
-                            setWord(word.map(letter => letter.state = 'correct'));
+                            setWord(word.map(letter => ({
+                                text: letter.text,
+                                state: 'correct',
+                            })));
                             setWordList({
                                 ...wordList,
                                 word,
                             });
-
                             // solver 닉네임과 url을 함께 보내면서 등록 요청
                             client.post(`/solve/${params.maker}/register`, { 
                                 nickname: nickname, 
@@ -229,10 +208,6 @@ const SolverBoard = () => {
                             setTimeout(() => {setWordState(''); setMessage(null);}, 500);
                         } else {
                             setWord(ColoringWord(word, wordCorrect));
-                            setWordList([
-                                ...wordList,
-                                word,
-                            ]);
                             setListIndex(listIndex + 1);
 
                             client.post(`/solve/${params.maker}/enter`, { newWord: word, keyState }) // 입력한 단어 및 키 상태 서버에 등록
