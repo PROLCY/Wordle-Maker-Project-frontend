@@ -89,29 +89,61 @@ const SolverBoard = () => {
                     submitNickname = true;
                     setTimeout(() => { 
                         setWordList(res.data.wordList);
+                        setListIndex(res.data.listIndex);
                         console.log("res.wordList", res.data.wordList);
                         setWord(res.data.lastWord);
                         console.log("res.lastWord:", res.data.lastWord);
-                        setListIndex(res.data.listIndex);
+                        
                     }, 100);
                 }
             })
     }, [params]);
 
     useEffect(() => {
-        console.log("word2:", word);
-        console.log('listIndex:', listIndex);
-        
-        //console.log(wordList.splice(listIndex, 0, word));
-        if ( submitNickname && word.length !== 0 ) {
-            setWordList(wordList.splice(listIndex, 0, word));
+        if ( submitNickname  ) {
+            console.log('wordlist:', wordList);
+            console.log('listIndex:',listIndex);
+            if ( wordList[listIndex] === undefined ) {
+                setWordList([
+                    ...wordList,
+                    word
+                ]);
+            } else {
+                setWordList(wordList.map((element, index) => {
+                    if ( index === listIndex )
+                        return word;
+                    else
+                        return element;
+                }));
+            }
+
             client.post(`/solve/${params.maker}/typing`, { newWord: word, listIndex: listIndex }) // 입력한 단어 및 키 상태 서버에 등록
                 .catch(error => {
                     console.log(error);
                 })
         }
-        console.log('wordList:', wordList);
     }, [word, params]);
+
+    useEffect(() => {
+        for( let i = 0 ; i < listIndex ; i++ ) {
+            if ( wordList[i].length !== 0 && wordList[i][0].state === 'all-correct' ) {
+                setTimeout( () => {
+                    setMessage(winningStatement[listIndex-1]);
+                    setTimeout(() => setMessage(null), 2000);
+                }, 2000);
+                isFinished = true;
+                return;
+            }
+            
+        }
+        if ( listIndex === wordListMaxLen ) {
+            isFinished = true;
+            setTimeout( () => {
+                setMessage(wordCorrect);
+                setTimeout(() => setMessage(null), 2000);
+            }, 2000);
+        }
+    }, [listIndex]);
 
     const ColoringWord = ( word, wordCorrect ) => { // word 상태 및 keyState 업데이트 함수
         let letterCorrectCounts = 0;
@@ -185,7 +217,7 @@ const SolverBoard = () => {
                             })
                                 .then( res => {
                                     setTimeout(() => {
-                                        setWordList([]);
+                                        setWordList([[]]);
                                         setWord([]);
                                         setWordCorrect(res.data.wordCorrect);
                                         setTimeout(() => { // 6줄로 전환
@@ -210,7 +242,7 @@ const SolverBoard = () => {
                             setWord(ColoringWord(word, wordCorrect));
                             setListIndex(listIndex + 1);
 
-                            client.post(`/solve/${params.maker}/enter`, { newWord: word, keyState }) // 입력한 단어 및 키 상태 서버에 등록
+                            client.post(`/solve/${params.maker}/enter`, { newWord: word, keyState: keyState }) // 입력한 단어 및 키 상태 서버에 등록
                                 .catch(error => {
                                     console.log(error);
                                 })
