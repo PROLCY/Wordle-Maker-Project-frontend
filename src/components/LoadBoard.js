@@ -6,6 +6,24 @@ import { useEffect, useState } from 'react';
 import { BACK } from './Keyboard/Keyboard';
 import { oneLine, sevenLines } from './Word/designSettings/WordListSet';
 import client from '../lib/api/client';
+import io from 'socket.io-client';
+
+/*import io from 'socket.io-client';
+
+const TestPage = () => {
+    const socket = io('http://localhost:4000', {
+        transports: ['websocket']
+    });
+    socket.on('news', function(data) {
+        console.log(data);
+        socket.emit('reply', 'Hello Node JS');
+    });
+    return (
+        <div>TestPage</div>
+    )
+};
+
+export default TestPage;*/
 
 const BoardContainer = styled.div` // 헤더를 제외한 부분 스타일
     width: 100%;
@@ -92,6 +110,22 @@ const LoadBoard = () => {
     const [solvers, setSolvers] = useState([]);
     const [pageIndex, setPageIndex] = useState(1);
 
+    const connectSocket = ( makerNickname ) => {
+        const socket = io('http://localhost:4000/loader', {
+            transports: ['websocket'],
+            query: {
+                maker: makerNickname,
+            }
+        });
+        socket.on('enter', function(data) {
+            setSolvers(data);
+        });
+        socket.on('typing', function(data) {
+            setSolvers(data);
+        });
+        return;
+    };
+
     useEffect(() => {
         client.get('/load/')
             .then( res => {
@@ -101,7 +135,9 @@ const LoadBoard = () => {
                 }
                 else {
                     setSubmitNickname(true);
-                    setSolvers(res.data);
+                    setSolvers(res.data.solvers);
+                    console.log(solvers);
+                    connectSocket(res.data.maker);
                 }
             })
     }, []);
@@ -148,6 +184,7 @@ const LoadBoard = () => {
                             client.post('/load/', { makerNickname: nickname })
                                 .then( res => {
                                     setSolvers(res.data);
+                                    connectSocket(nickname);
                                 })
                         }
                     });

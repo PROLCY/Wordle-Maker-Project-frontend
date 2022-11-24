@@ -7,6 +7,7 @@ import { oneLine, sixLines } from './Word/designSettings/WordListSet';
 import client from '../lib/api/client';
 import { useParams } from 'react-router-dom';
 import io from 'socket.io-client';
+import { redirect } from 'react-router-dom';
 
 
 const BoardContainer = styled.div` // 헤더를 제외한 부분 스타일
@@ -79,6 +80,11 @@ const SolverBoard = () => {
         connectSocket(params.maker);
         client.get(`/solve/${params.maker}`)
             .then( res => {
+                if ( res.data === 'Not Found') {
+                    setMessage('This Wordle was Deleted or Not Made yet');
+                    isFinished = true;
+                    return;
+                }
                 if ( res.data === 'no-session')
                     setMessage('Enter your nickname!');
                 else {
@@ -116,11 +122,12 @@ const SolverBoard = () => {
                         return element;
                 }));
             }
-
-            client.post(`/solve/${params.maker}/typing`, { newWord: word, listIndex: listIndex }) // 입력한 단어 및 키 상태 서버에 등록
-                .catch(error => {
-                    console.log(error);
-                })
+            if ( word.length !== 0 && word[0].state === 'filled') {
+                client.post(`/solve/${params.maker}/typing`, { newWord: word, listIndex: listIndex }) // 입력한 단어 및 키 상태 서버에 등록
+                    .catch(error => {
+                        console.log(error);
+                    })
+            }
         }
     }, [word, params]);
 
@@ -239,7 +246,8 @@ const SolverBoard = () => {
                             setWordState('not-word');
                             setTimeout(() => {setWordState(''); setMessage(null);}, 500);
                         } else {
-                            setWord(ColoringWord(word, wordCorrect));
+                            const newWord = ColoringWord(word, wordCorrect);
+                            setWord(newWord);
                             setListIndex(listIndex + 1);
 
                             client.post(`/solve/${params.maker}/enter`, { newWord: word, keyState: keyState }) // 입력한 단어 및 키 상태 서버에 등록
