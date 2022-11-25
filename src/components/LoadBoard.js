@@ -7,6 +7,7 @@ import { BACK } from './Keyboard/Keyboard';
 import { oneLine, sevenLines } from './Word/designSettings/WordListSet';
 import client from '../lib/api/client';
 import io from 'socket.io-client';
+import { useNavigate } from 'react-router-dom';
 
 /*import io from 'socket.io-client';
 
@@ -43,14 +44,14 @@ const BoardBlock = styled.div` // 단어 리스트 스타일
     overflow: hidden;
 `;
 
-const ButtonBlock = styled.div`
+const PageButtonBlock = styled.div`
     display: flex;
     justify-content: center;
     height: 100px;
     align-items: center;
 `;
 
-const Button = styled.div`
+const PageButton = styled.div`
     line-height: 80px;
     margin: 10px 20px;
     padding: 1px 1px;
@@ -72,6 +73,21 @@ const Button = styled.div`
             (props.id === 'next' && (props.listLength <= props.pageIndex * 4) && 'default') ||
             'pointer'
         };
+    }
+`;
+
+const StateButtonblock = styled.div`
+    display: flex;
+    justify-content: center;
+    height: 50px;
+    border: none;
+    button {
+        width: 250px;
+        font-size: 25px;
+        border-radius: 10px;
+        background-color: white;
+        border: solid 2px black;
+        cursor: pointer;
     }
 `;
 
@@ -99,8 +115,6 @@ const wordMaxLen = 5;
 let listIndex = 0;
 let keyState = {};
 
-let nickname='';
-
 const LoadBoard = () => {
     const [word, setWord] = useState([]);
     const [wordList, setWordList] = useState([]);
@@ -109,6 +123,8 @@ const LoadBoard = () => {
     const [submitNickname, setSubmitNickname] = useState(0);
     const [solvers, setSolvers] = useState([]);
     const [pageIndex, setPageIndex] = useState(1);
+    const [nickname, setNickname] = useState('');
+    const navigate = useNavigate();
 
     const connectSocket = ( makerNickname ) => {
         const socket = io('http://localhost:4000/loader', {
@@ -135,15 +151,22 @@ const LoadBoard = () => {
                 }
                 else {
                     setSubmitNickname(true);
-                    setSolvers(res.data.solvers);
-                    console.log(solvers);
-                    connectSocket(res.data.maker);
+                    setNickname(res.data.maker);
                 }
             })
     }, []);
 
-    const onClick = e => { // 키를 눌렀을 때 실행되는 함수
+    useEffect(() => {
+        if ( nickname === '')
+            return;
+        client.post('/load/', { makerNickname: nickname })
+            .then( res => {
+                setSolvers(res.data);
+                connectSocket(nickname);
+            })
+    }, [nickname]);
 
+    const onClickKeyBoard = e => { // 키를 눌렀을 때 실행되는 함수
         if ( submitNickname === false ) {
             if ( e.target.innerText === 'ENTER') { // ENTER를 눌렀을 경우
                 if ( word.length < wordMaxLen ) { 
@@ -152,14 +175,13 @@ const LoadBoard = () => {
                     setTimeout(() => {setWordState(''); setMessage(null);}, 500);
                     return;
                 }
-                    
-                for( let i = 0 ; i < wordMaxLen ; i++ )
-                    nickname += word[i].text;
                 
-                client.post('/load/exist', { nickname: nickname })
+                const makerNickname = word.map(letter => letter.text).join('');
+                
+                client.post('/load/exist', { nickname: makerNickname })
                     .then( res => {
                         if ( res.data === false) {
-                            nickname = '';
+                            setNickname('');
                             setMessage("It doesn't exist!");
                             setWordState('not-word');
                             setTimeout(() => {setWordState(''); setMessage(null);}, 500);
@@ -169,6 +191,7 @@ const LoadBoard = () => {
                             for( let i = 0 ; i < wordMaxLen ; i++ ) {
                                 word[i].state = 'correct';
                             }
+                            setNickname(makerNickname);
                             setWordList({
                                 ...wordList,
                                 word,
@@ -181,11 +204,6 @@ const LoadBoard = () => {
                                 });
                                 setSubmitNickname(true);
                             }, 2000);
-                            client.post('/load/', { makerNickname: nickname })
-                                .then( res => {
-                                    setSolvers(res.data);
-                                    connectSocket(nickname);
-                                })
                         }
                     });
                 return;
@@ -205,7 +223,9 @@ const LoadBoard = () => {
             }));
             return;
         }
+    };
 
+    const onClickPageButton = e => {
         if ( e.target.id === 'next' ) {
             if ( solvers.length > pageIndex * 4 )
                 setPageIndex(pageIndex + 1);
@@ -215,6 +235,11 @@ const LoadBoard = () => {
             if ( pageIndex > 1 )
                 setPageIndex(pageIndex - 1);
         }
+    };
+
+    const onClickDelete = e => {
+        client.delete(`/load/delete/${nickname}`)
+            .then(navigate('/'));
     };
 
     return (
@@ -229,11 +254,16 @@ const LoadBoard = () => {
                 }
             </BoardBlock>
             {
-                (submitNickname === false && <Keyboard onClick={onClick} keyState={keyState}/>) ||
-                (submitNickname === true && <ButtonBlock>
-                    <Button id='prev' pageIndex={pageIndex} listLength={solvers.length} onClick={onClick}>&lt;</Button>
-                    <Button id='next' pageIndex={pageIndex} listLength={solvers.length} onClick={onClick}>&gt;</Button>
-                </ButtonBlock>)
+                (submitNickname === false && <Keyboard onClick={onClickKeyBoard} keyState={keyState}/>) ||
+                (submitNickname === true && 
+                    <>
+                        <PageButtonBlock>
+                            <PageButton id='prev' pageIndex={pageIndex} listLength={solvers.length} onClick={onClickPageButton}>&lt;</PageButton>
+                            <PageButton id='next' pageIndex={pageIndex} listLength={solvers.length} onClick={onClickPageButton}>&gt;</PageButton>
+                        </PageButtonBlock>
+                        <StateButtonblock><button onClick={onClickDelete}>DELETE WORDLE</button></StateButtonblock>
+                    </>
+                )
             }
 
         </BoardContainer>
