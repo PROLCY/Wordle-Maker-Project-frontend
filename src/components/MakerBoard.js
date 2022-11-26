@@ -52,6 +52,16 @@ let keyState = {};
 let nickname='';
 let correct_word='';
 
+const Initialized = () => {
+    isFinished = false;
+    submitNickname = false;
+    submitWord = false;
+    listIndex = 0;
+    keyState = {};
+    nickname = '';
+    correct_word = '';
+};
+
 const MakerBoard = () => {
     const [word, setWord] = useState([]);
     const [wordList, setWordList] = useState([]);
@@ -62,6 +72,7 @@ const MakerBoard = () => {
         client.get('/make/')
             .then( res => {
                 if ( res.data === 'no-session') {
+                    Initialized();
                     setMessage('Enter your nickname!');
                 }
                 else {
@@ -158,7 +169,6 @@ const MakerBoard = () => {
                                         setMessage(res.data);
                                     }, 2000);
                                 })
-                            // 만든 문제 링크 띄우기(모달 or 링크 복사 div)
                         }
                     })
             }

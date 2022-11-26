@@ -8,23 +8,7 @@ import { oneLine, sevenLines } from './Word/designSettings/WordListSet';
 import client from '../lib/api/client';
 import io from 'socket.io-client';
 import { useNavigate } from 'react-router-dom';
-
-/*import io from 'socket.io-client';
-
-const TestPage = () => {
-    const socket = io('http://localhost:4000', {
-        transports: ['websocket']
-    });
-    socket.on('news', function(data) {
-        console.log(data);
-        socket.emit('reply', 'Hello Node JS');
-    });
-    return (
-        <div>TestPage</div>
-    )
-};
-
-export default TestPage;*/
+import { useLocation } from 'react-router-dom';
 
 const BoardContainer = styled.div` // 헤더를 제외한 부분 스타일
     width: 100%;
@@ -84,6 +68,7 @@ const StateButtonblock = styled.div`
     button {
         width: 250px;
         font-size: 25px;
+        font-weight: bold;
         border-radius: 10px;
         background-color: white;
         border: solid 2px black;
@@ -126,6 +111,8 @@ const LoadBoard = () => {
     const [nickname, setNickname] = useState('');
     const navigate = useNavigate();
 
+    //console.log(window.location.href);
+
     const connectSocket = ( makerNickname ) => {
         const socket = io('http://localhost:4000/loader', {
             transports: ['websocket'],
@@ -167,62 +154,60 @@ const LoadBoard = () => {
     }, [nickname]);
 
     const onClickKeyBoard = e => { // 키를 눌렀을 때 실행되는 함수
-        if ( submitNickname === false ) {
-            if ( e.target.innerText === 'ENTER') { // ENTER를 눌렀을 경우
-                if ( word.length < wordMaxLen ) { 
-                    setMessage('Not enough letters');
-                    setWordState('not-word');
-                    setTimeout(() => {setWordState(''); setMessage(null);}, 500);
-                    return;
-                }
-                
-                const makerNickname = word.map(letter => letter.text).join('');
-                
-                client.post('/load/exist', { nickname: makerNickname })
-                    .then( res => {
-                        if ( res.data === false) {
-                            setNickname('');
-                            setMessage("It doesn't exist!");
-                            setWordState('not-word');
-                            setTimeout(() => {setWordState(''); setMessage(null);}, 500);
-                            return;
+        if ( e.target.innerText === 'ENTER') { // ENTER를 눌렀을 경우
+            if ( word.length < wordMaxLen ) { 
+                setMessage('Not enough letters');
+                setWordState('not-word');
+                setTimeout(() => {setWordState(''); setMessage(null);}, 500);
+                return;
+            }
+            
+            const makerNickname = word.map(letter => letter.text).join('');
+            
+            client.post('/load/exist', { nickname: makerNickname })
+                .then( res => {
+                    if ( res.data === false) {
+                        setNickname('');
+                        setMessage("It doesn't exist!");
+                        setWordState('not-word');
+                        setTimeout(() => {setWordState(''); setMessage(null);}, 500);
+                        return;
+                    }
+                    else {
+                        for( let i = 0 ; i < wordMaxLen ; i++ ) {
+                            word[i].state = 'correct';
                         }
-                        else {
-                            for( let i = 0 ; i < wordMaxLen ; i++ ) {
-                                word[i].state = 'correct';
-                            }
-                            setNickname(makerNickname);
+                        setNickname(makerNickname);
+                        setWordList({
+                            ...wordList,
+                            word,
+                        });
+                        
+                        setTimeout(() => {
+                            setWord([]);
                             setWordList({
-                                ...wordList,
                                 word,
                             });
-                            
-                            setTimeout(() => {
-                                setWord([]);
-                                setWordList({
-                                    word,
-                                });
-                                setSubmitNickname(true);
-                            }, 2000);
-                        }
-                    });
-                return;
-            }
-            setMessage(null);
-            if ( e.target.innerText === BACK ) {
-                if ( word.length === 0 )
-                    return;
-                setWord(word.slice(0, -1));
-                return;
-            }
-            if ( word.length > wordMaxLen )
-                return;
-            setWord(word.concat({
-                text: e.target.innerText,
-                state: 'filled',
-            }));
+                            setSubmitNickname(true);
+                        }, 2000);
+                    }
+                });
             return;
         }
+        setMessage(null);
+        if ( e.target.innerText === BACK ) {
+            if ( word.length === 0 )
+                return;
+            setWord(word.slice(0, -1));
+            return;
+        }
+        if ( word.length > wordMaxLen )
+            return;
+        setWord(word.concat({
+            text: e.target.innerText,
+            state: 'filled',
+        }));
+        return;
     };
 
     const onClickPageButton = e => {
@@ -239,7 +224,16 @@ const LoadBoard = () => {
 
     const onClickDelete = e => {
         client.delete(`/load/delete/${nickname}`)
-            .then(navigate('/'));
+            .then( res => {
+                if ( res.data === 'oneClick' ) {
+                    setMessage('Press delete button one more again');
+                    setTimeout(() => {
+                        setMessage(null);
+                    }, 3000);
+                } else if ( res.data === 'doubleClick' ) {
+                    navigate('/');
+                }
+            })
     };
 
     return (

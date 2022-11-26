@@ -2,8 +2,7 @@ import { Route, Routes } from 'react-router-dom';
 import MakerPage from './pages/MakerPage';
 import SolverPage from './pages/SolverPage';
 import LoadPage from './pages/LoadPage';
-import TestPage from './pages/TestPage';
-import Test from './pages/Test';
+import NotFound from './pages/NotFound';
 
 const App = () => {
     return (
@@ -11,8 +10,7 @@ const App = () => {
             <Route path="/" element={<MakerPage />} />
             <Route path="/solve/:maker" element={<SolverPage />} />
             <Route path="/load/" element={<LoadPage />}/>
-            <Route path="/test/" element={<TestPage />}/>
-            <Route path="/t" element={<Test />}/>
+            <Route path="*" element={<NotFound />}/>
         </Routes>
     );
 };

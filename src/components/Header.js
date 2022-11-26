@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 const HeaderBlcok = styled.header`
@@ -37,14 +38,37 @@ const Buttons = styled.div`
     justify-content: flex-end;
     position: relative;
     padding: 0px;
+    button {
+        width: 100px;
+        height: 50px;
+        font-size: 20px;
+        font-weight: bold;
+        background: none;
+        border: solid 1px;
+        border-radius: 5px;
+    }
 `;
 
 const Header = props => {
+    const navigate = useNavigate();
+    
+    const onClick = () => {
+        if ( props.title === 'Wordle Maker' )
+            navigate('/load');
+        else if ( props.title === 'Wordle Loader' )
+            navigate('/');
+    };
     return (
         <HeaderBlcok>
             <LeftSpace />
             <Title>{props.title}</Title>
-            <Buttons />
+            <Buttons>
+                {
+                    (props.title === 'Wordle Maker' && <button onClick={onClick}>Wordle Loader</button>) ||
+                    (props.title === 'Wordle Loader' && <button onClick={onClick}>Wordle Maker</button>)
+                }
+                
+            </Buttons>
         </HeaderBlcok>
     )
 }

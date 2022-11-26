@@ -251,6 +251,9 @@ const SolverBoard = () => {
                             setListIndex(listIndex + 1);
 
                             client.post(`/solve/${params.maker}/enter`, { newWord: word, keyState: keyState }) // 입력한 단어 및 키 상태 서버에 등록
+                                /*.then( res => {
+                                    setWord([]);
+                                })*/
                                 .catch(error => {
                                     console.log(error);
                                 })
