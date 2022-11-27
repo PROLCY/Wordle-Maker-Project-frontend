@@ -8,7 +8,6 @@ import { oneLine, sevenLines } from './Word/designSettings/WordListSet';
 import client from '../lib/api/client';
 import io from 'socket.io-client';
 import { useNavigate } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
 
 const BoardContainer = styled.div` // 헤더를 제외한 부분 스타일
     width: 100%;
@@ -114,7 +113,7 @@ const LoadBoard = () => {
     //console.log(window.location.href);
 
     const connectSocket = ( makerNickname ) => {
-        const socket = io('http://localhost:4000/loader', {
+        const socket = io(window.location.href.slice(0, -4)+'loader', {
             transports: ['websocket'],
             query: {
                 maker: makerNickname,
@@ -130,7 +129,7 @@ const LoadBoard = () => {
     };
 
     useEffect(() => {
-        client.get('/load/')
+        client.get('/load/init')
             .then( res => {
                 if ( res.data === 'no-session') {
                     setSubmitNickname(false);
@@ -146,7 +145,7 @@ const LoadBoard = () => {
     useEffect(() => {
         if ( nickname === '')
             return;
-        client.post('/load/', { makerNickname: nickname })
+        client.post('/load/init', { makerNickname: nickname })
             .then( res => {
                 setSolvers(res.data);
                 connectSocket(nickname);

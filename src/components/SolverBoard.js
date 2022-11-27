@@ -7,7 +7,6 @@ import { oneLine, sixLines } from './Word/designSettings/WordListSet';
 import client from '../lib/api/client';
 import { useParams } from 'react-router-dom';
 import io from 'socket.io-client';
-import { redirect } from 'react-router-dom';
 
 
 const BoardContainer = styled.div` // 헤더를 제외한 부분 스타일
@@ -57,7 +56,8 @@ let nickname = '';
 const winningStatement = ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Phew'];
 
 const connectSocket = ( makerNickname ) => {
-    const socket = io('http://localhost:4000/loader', {
+    console.log("namespace:", window.location.href.slice(0, -11)+'loader');
+    const socket = io(window.location.href.slice(0, -11)+'loader', {
         transports: ['websocket'],
         query: {
             maker: makerNickname,
@@ -78,7 +78,7 @@ const SolverBoard = () => {
 
     useEffect(() => { // 렌더링될 때
         connectSocket(params.maker);
-        client.get(`/solve/${params.maker}`)
+        client.get(`/solve/${params.maker}/init`)
             .then( res => {
                 if ( res.data === 'Not Found') {
                     setMessage('This Wordle was Deleted or Not Made yet');

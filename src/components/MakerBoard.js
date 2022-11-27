@@ -24,7 +24,7 @@ const BoardBlock = styled.div` // 단어 리스트 스타일
 `;
 
 const Message = styled.div` // 알림 박스 스타일
-    width: auto;
+    width: max-content;
     height: 40px; 
     position: absolute;
     display: ${props => props.message !== null ? 'inline-block' : 'none'};
