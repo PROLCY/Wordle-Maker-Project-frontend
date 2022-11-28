@@ -113,7 +113,13 @@ const LoadBoard = () => {
     //console.log(window.location.href);
 
     const connectSocket = ( makerNickname ) => {
-        const socket = io(window.location.href.slice(0, -4)+'loader', {
+        /*const socket = io(window.location.href.slice(0, -4)+'loader', {
+            transports: ['websocket'],
+            query: {
+                maker: makerNickname,
+            }
+        });*/
+        const socket = io('http://localhost:4000/loader', {
             transports: ['websocket'],
             query: {
                 maker: makerNickname,

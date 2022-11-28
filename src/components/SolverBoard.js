@@ -56,8 +56,13 @@ let nickname = '';
 const winningStatement = ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Phew'];
 
 const connectSocket = ( makerNickname ) => {
-    console.log("namespace:", window.location.href.slice(0, -11)+'loader');
-    const socket = io(window.location.href.slice(0, -11)+'loader', {
+    /*const socket = io(window.location.href.slice(0, -11)+'loader', {
+        transports: ['websocket'],
+        query: {
+            maker: makerNickname,
+        }
+    });*/
+    const socket = io('http://localhost:4000/loader', {
         transports: ['websocket'],
         query: {
             maker: makerNickname,
@@ -107,8 +112,6 @@ const SolverBoard = () => {
 
     useEffect(() => {
         if ( submitNickname  ) {
-            console.log('wordlist:', wordList);
-            console.log('listIndex:',listIndex);
             if ( wordList[listIndex] === undefined ) {
                 setWordList([
                     ...wordList,
@@ -122,13 +125,18 @@ const SolverBoard = () => {
                         return element;
                 }));
             }
-            if ( word.length !== 0 && word[0].state === 'filled') {
-                client.post(`/solve/${params.maker}/typing`, { newWord: word, listIndex: listIndex }) // 입력한 단어 및 키 상태 서버에 등록
-                    .catch(error => {
-                        console.log(error);
-                    })
-            }
+            client.post(`/solve/${params.maker}/typing`, { newWord: word, listIndex: listIndex }) // 입력한 단어 및 키 상태 서버에 등록
+                .then( res => {
+                    if ( word.length !== 0 && word[0].state !== 'filled' ) {
+                        setListIndex(listIndex + 1);
+                        setWord([]);
+                    }
+                })
+                .catch(error => {
+                    console.log(error);
+                })
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [word, params]);
 
     useEffect(() => {
@@ -150,6 +158,7 @@ const SolverBoard = () => {
                 setTimeout(() => setMessage(null), 2000);
             }, 2000);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [listIndex]);
 
     const ColoringWord = ( word, wordCorrect ) => { // word 상태 및 keyState 업데이트 함수
@@ -246,14 +255,8 @@ const SolverBoard = () => {
                             setWordState('not-word');
                             setTimeout(() => {setWordState(''); setMessage(null);}, 500);
                         } else {
-                            const newWord = ColoringWord(word, wordCorrect);
-                            setWord(newWord);
-                            setListIndex(listIndex + 1);
-
-                            client.post(`/solve/${params.maker}/enter`, { newWord: word, keyState: keyState }) // 입력한 단어 및 키 상태 서버에 등록
-                                /*.then( res => {
-                                    setWord([]);
-                                })*/
+                            setWord(ColoringWord(word.map(letter => ({...letter})), wordCorrect));
+                            client.post(`/solve/${params.maker}/enter`, { keyState: keyState }) // 입력한 단어 및 키 상태 서버에 등록
                                 .catch(error => {
                                     console.log(error);
                                 })
@@ -265,7 +268,6 @@ const SolverBoard = () => {
                                 }, 2000);
                                 isFinished = true;
                             }
-                            setWord([]);
 
                             if ( isFinished )
                                 return;

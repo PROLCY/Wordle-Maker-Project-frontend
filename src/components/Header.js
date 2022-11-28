@@ -57,6 +57,8 @@ const Header = props => {
             navigate('/load');
         else if ( props.title === 'Wordle Loader' )
             navigate('/');
+        else if ( props.title === 'Wordle Solver' )
+            navigate('/');
     };
     return (
         <HeaderBlcok>
@@ -65,7 +67,8 @@ const Header = props => {
             <Buttons>
                 {
                     (props.title === 'Wordle Maker' && <button onClick={onClick}>Wordle Loader</button>) ||
-                    (props.title === 'Wordle Loader' && <button onClick={onClick}>Wordle Maker</button>)
+                    (props.title === 'Wordle Loader' && <button onClick={onClick}>Wordle Maker</button>) ||
+                    (props.title === 'Wordle Solver' && <button onClick={onClick}>Wordle Maker</button>)
                 }
                 
             </Buttons>
