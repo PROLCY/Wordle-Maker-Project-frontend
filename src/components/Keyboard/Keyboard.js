@@ -1,25 +1,25 @@
 import styled from 'styled-components';
 import Key from './Key';
 
-const KeyboardBlcok = styled.div`
+const KeyboardBlcok = styled.div` // Keyboard 스타일
     height: 200px;
     margin: 0 8px;
     user-select: none;
 `;
 
-const KeyLineBlock = styled.div`
+const KeyLineBlock = styled.div` // Keyboard 한 줄의 스타일
     display: flex;
     width: 100%;
     margin: 0 auto 8px;
     touch-action: manipualtion;
 `;
 
-const Spacer = styled.div`
+const Spacer = styled.div` // 배열을 위한 공백 스타일
     flex: 0.5;
     display: block;
 `;
 
-export const BACK = '\u232B';
+export const BACK = '\u232B'; // 백스페이스
 
 const Keyboard = props => {
     const first_letters=['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'];
@@ -32,7 +32,7 @@ const Keyboard = props => {
 
     return (
         <KeyboardBlcok>
-
+            
             <KeyLineBlock>
                 {keyListFirst}
             </KeyLineBlock>

@@ -1,10 +1,10 @@
 import styled from 'styled-components';
 import { black, bright_gray, dark_gray, green, white, yellow } from '../../lib/color';
 
-export const delayTime = 400;
-const durationTime = 600;
+export const delayTime = 400; // 애니메이션 지연 시간
+const durationTime = 600; // 애니메이션 진행 시간
 
-const LetterBlock = styled.div`
+const LetterBlock = styled.div` // Letter 스타일
     width: 100%;
     display: block;
     position: relative;
@@ -20,17 +20,16 @@ const LetterBlock = styled.div`
     transition-duration: ${durationTime}ms;
 
     animation: ${props => 
-        (props.state === 'all-correct' && `Waving 500ms ${props.index * (delayTime/4) + 2000}ms`) ||
-        (props.state === 'not-word' && 'Quivering 1000ms')
+        (props.state === 'all-correct' && `Waving 500ms ${props.index * (delayTime/4) + 2000}ms`)
     };
-    @keyframes Waving {
+    @keyframes Waving { // 파도타기 애니메이션
         0% { transform: rotateX(180deg) translate(0, 0px); }
         50% { transform: rotateX(180deg) translate(0, 30px); }
         100% { transform:  rotateX(180deg) translate(0, 0px); }
     }
 `;
 
-const FrontBlock = styled.div` // 앞면
+const FrontBlock = styled.div` // 앞면 스타일
     position: absolute;
     width: 100%;
     height: 100%;
@@ -53,7 +52,7 @@ const FrontBlock = styled.div` // 앞면
         (props.state === 'filled' && 'Popping 50ms')
     };
 
-    @keyframes Popping {
+    @keyframes Popping { // 팝핑 애니메이션
         from { 
             width: 100%;
             height: 100%;
@@ -64,7 +63,7 @@ const FrontBlock = styled.div` // 앞면
     }
 `;
 
-const BackBlock = styled.div` // 뒷면
+const BackBlock = styled.div` // 뒷면 스타일
     position: absolute;
     width: 100%;
     height: 100%;

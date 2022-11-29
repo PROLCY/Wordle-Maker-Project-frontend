@@ -1,25 +1,13 @@
 import styled from 'styled-components';
 import LoadLetter from './LoadLetter';
 
-const WordBlock = styled.div`
+const LoadWordBlock = styled.div` // LoadWord 스타일
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     grid-gap: 5px;
-
-    animation: ${props =>
-        (props.wordState === 'not-word' && 'Quivering 150ms 0ms 3')
-    };
-
-    @keyframes Quivering {
-        0% { transform: translate(0, 0); }
-        25% { transform: translate(-5px, 0); }
-        50% { transform: translate(0, 0); }
-        75% { transform: translate(5px, 0); }
-        100% { transform: translate(0, 0); }
-    }
 `;
 
-const Word = props => {
+const LoadWord = props => {
     const array = [0, 1, 2, 3, 4];
     const RenderLetter = index => { // word상태에서 문자 추출
         if ( props.word === [] ) {
@@ -40,10 +28,10 @@ const Word = props => {
     }
     const letterList = array.map(index => <LoadLetter key={index} letter={RenderLetter(index)} index={index}></LoadLetter>);
     return (
-        <WordBlock wordState={props.wordState}>
+        <LoadWordBlock>
             {letterList}
-        </WordBlock>
+        </LoadWordBlock>
     );
 };
 
-export default Word;
+export default LoadWord;

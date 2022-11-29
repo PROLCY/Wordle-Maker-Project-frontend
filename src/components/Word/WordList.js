@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import Word from "./Word";
 
-const WordListBlock = styled.div`
+const WordListBlock = styled.div` // WordList 스타일
     width: 350px;
     height: ${ props => props.lineSet.height};
     display: grid;

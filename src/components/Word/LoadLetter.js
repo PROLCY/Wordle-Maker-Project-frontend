@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import { black, bright_gray, dark_gray, green, white, yellow } from '../../lib/color';
 
-const LetterBlock = styled.div`
+const LoadLetterBlock = styled.div` // LoadLetter 스타일
     width: 100%;
     display: block;
     position: relative;
@@ -15,7 +15,7 @@ const LetterBlock = styled.div`
     };
 `;
 
-const FrontBlock = styled.div` // 앞면
+const FrontBlock = styled.div` // 앞면 스타일
     position: absolute;
     width: 100%;
     height: 100%;
@@ -35,7 +35,7 @@ const FrontBlock = styled.div` // 앞면
     color: ${black};
 `;
 
-const BackBlock = styled.div` // 뒷면
+const BackBlock = styled.div` // 뒷면 스타일
     position: absolute;
     width: 100%;
     height: 100%;
@@ -61,10 +61,10 @@ const BackBlock = styled.div` // 뒷면
 const LoadLetter = props => {
     const letter = props.letter;
     return (
-        <LetterBlock state={letter.state} index={props.index}>
+        <LoadLetterBlock state={letter.state} index={props.index}>
             <FrontBlock state={letter.state}>{letter.text}</FrontBlock>
             <BackBlock state={letter.state}>{letter.text}</BackBlock>     
-        </LetterBlock>
+        </LoadLetterBlock>
     );
 }
 

@@ -3,7 +3,7 @@ import { BACK } from './Keyboard';
 import { dark_gray, green, yellow, white, black, bright_gray } from '../../lib/color';
 import { delayTime } from '../Word/Letter';
 
-const KeyBlock = styled.button`
+const KeyBlock = styled.button` // Key 스타일
     font-family: inherit;
     font-weight: bold;
     font-size: 0.95rem;

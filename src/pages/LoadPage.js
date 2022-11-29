@@ -35,20 +35,19 @@ const MainPageBlock = styled.div`
     }
 `;
 
-
-
 const LoadPage = () => {
     const [modal, setModal] = useState(false);
     
     const onModal = () => {
         setModal(true);
-    }
+    };
 
     const offModal = e => {
         if ( e.target.className === 'modal-body')
             return;
         setModal(false);
-    }
+    };
+    
     return (
         <MainPageBlock modal={modal}>
             <div className='modal' onClick={offModal}>

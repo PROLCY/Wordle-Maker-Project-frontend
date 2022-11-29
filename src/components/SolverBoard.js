@@ -55,19 +55,27 @@ let nickname = '';
 
 const winningStatement = ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Phew'];
 
-const connectSocket = ( makerNickname ) => {
-    /*const socket = io(window.location.href.slice(0, -11)+'loader', {
+const connectSocket = ( makerNickname ) => { // socket.io(웹소켓) 연결 함수
+
+    /* 실제 배포 시 사용
+    const socket = io(window.location.href.slice(0, -11)+'loader', {
         transports: ['websocket'],
         query: {
             maker: makerNickname,
         }
-    });*/
+    });
+
+    return socket;
+    */
+    
+    /* 개발 시 사용 */
     const socket = io('http://localhost:4000/loader', {
         transports: ['websocket'],
         query: {
             maker: makerNickname,
         }
     });
+
     return socket;
 };
 
@@ -83,7 +91,7 @@ const SolverBoard = () => {
 
     useEffect(() => { // 렌더링될 때
         connectSocket(params.maker);
-        client.get(`/solve/${params.maker}/init`)
+        client.get(`/solve/${params.maker}/init`) // 세션 검증 및 데이터 요청
             .then( res => {
                 if ( res.data === 'Not Found') {
                     setMessage('This Wordle was Deleted or Not Made yet');
@@ -101,16 +109,14 @@ const SolverBoard = () => {
                     setTimeout(() => { 
                         setWordList(res.data.wordList);
                         setListIndex(res.data.listIndex);
-                        console.log("res.wordList", res.data.wordList);
                         setWord(res.data.lastWord);
-                        console.log("res.lastWord:", res.data.lastWord);
-                        
                     }, 100);
                 }
             })
-    }, [params]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-    useEffect(() => {
+    useEffect(() => { // word가 변경될 때
         if ( submitNickname  ) {
             if ( wordList[listIndex] === undefined ) {
                 setWordList([
@@ -125,21 +131,18 @@ const SolverBoard = () => {
                         return element;
                 }));
             }
-            client.post(`/solve/${params.maker}/typing`, { newWord: word, listIndex: listIndex }) // 입력한 단어 및 키 상태 서버에 등록
+            client.post(`/solve/${params.maker}/typing`, { newWord: word, listIndex: listIndex }) // 입력한 단어 서버에 등록
                 .then( res => {
-                    if ( word.length !== 0 && word[0].state !== 'filled' ) {
+                    if ( word.length !== 0 && word[0].state !== 'filled' ) { // 색칠된 단어인 경우
                         setListIndex(listIndex + 1);
                         setWord([]);
                     }
                 })
-                .catch(error => {
-                    console.log(error);
-                })
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [word, params]);
+    }, [word]);
 
-    useEffect(() => {
+    useEffect(() => { // listIndex가 변경될 때
         for( let i = 0 ; i < listIndex ; i++ ) {
             if ( wordList[i].length !== 0 && wordList[i][0].state === 'all-correct' ) {
                 setTimeout( () => {
@@ -149,7 +152,6 @@ const SolverBoard = () => {
                 isFinished = true;
                 return;
             }
-            
         }
         if ( listIndex === wordListMaxLen ) {
             isFinished = true;
@@ -161,7 +163,7 @@ const SolverBoard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [listIndex]);
 
-    const ColoringWord = ( word, wordCorrect ) => { // word 상태 및 keyState 업데이트 함수
+    const ColoringWord = ( word, wordCorrect ) => { // 단어 색칠 및 keyState 업데이트 함수
         let letterCorrectCounts = 0;
         const wordLen = word.length;
 
@@ -199,17 +201,20 @@ const SolverBoard = () => {
         if ( isFinished )
                 return;
         if ( e.target.innerText === 'ENTER') { // ENTER를 눌렀을 경우
-            if ( word.length < wordMaxLen ) { 
+            if ( word.length < wordMaxLen ) { // 문자 개수가 부족할 때
                 setMessage('Not enough letters');
                 setWordState('not-word');
-                setTimeout(() => {setWordState(''); setMessage(null);}, 500);
+                setTimeout(() => {
+                    setWordState(''); 
+                    setMessage(null);
+                }, 500);
                 return;
             }
-            if ( submitNickname === false ) { // 닉네임 제출
-                for( let i = 0 ; i < wordMaxLen ; i++ )
-                    nickname += word[i].text;
+            if ( submitNickname === false ) { // 닉네임 입력 과정
                 
-                client.post(`/solve/${params.maker}/duplicated`, { nickname: nickname })
+                nickname = word.map(letter => letter.text).join('');
+                
+                client.post(`/solve/${params.maker}/duplicated`, { nickname: nickname }) // 중복 판별 요청
                     .then( res => {
                         if ( res.data === 'duplicated') {
                             nickname = '';
@@ -227,8 +232,8 @@ const SolverBoard = () => {
                                 ...wordList,
                                 word,
                             });
-                            // solver 닉네임과 url을 함께 보내면서 등록 요청
-                            client.post(`/solve/${params.maker}/register`, { 
+
+                            client.post(`/solve/${params.maker}/register`, { // solver 등록 요청
                                 nickname: nickname, 
                             })
                                 .then( res => {
@@ -248,7 +253,7 @@ const SolverBoard = () => {
             }
             else {
                 const wordText = word.map(letter => letter.text).join('');
-                client.post(`/solve/exist`, { word: wordText }) // 단어 존재 여부 검증
+                client.post(`/solve/exist`, { word: wordText }) // 단어 존재 여부 판별 요청
                     .then( res => {
                         if ( res.data.exist === false ) {
                             setMessage('Not in word list');
@@ -256,10 +261,8 @@ const SolverBoard = () => {
                             setTimeout(() => {setWordState(''); setMessage(null);}, 500);
                         } else {
                             setWord(ColoringWord(word.map(letter => ({...letter})), wordCorrect));
-                            client.post(`/solve/${params.maker}/enter`, { keyState: keyState }) // 입력한 단어 및 키 상태 서버에 등록
-                                .catch(error => {
-                                    console.log(error);
-                                })
+
+                            client.post(`/solve/${params.maker}/enter`, { keyState: keyState }) // 키 상태 서버에 등록 요청
                             
                             if ( word[0].state === 'all-correct' ) {
                                 setTimeout( () => { // 성공 메시지 띄우기

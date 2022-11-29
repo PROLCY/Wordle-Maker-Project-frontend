@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import LoadWord from "./LoadWord";
 
-const WordListBlock = styled.div`
+const LoadWordListBlock = styled.div` // LoadWordList 스타일
     width: 350px;
     height: ${ props => props.lineSet.height};
     display: grid;
@@ -12,7 +12,7 @@ const WordListBlock = styled.div`
     transition: height 300ms;
 `;
 
-const WordList = props => {
+const LoadWordList = props => {
     const listIndex = props.listIndex;
     const wordList = props.wordList;
     const lineSet = props.lineSet;
@@ -26,10 +26,10 @@ const WordList = props => {
             return [];
     }
     return (
-        <WordListBlock lineSet={lineSet}>
+        <LoadWordListBlock lineSet={lineSet}>
             {array.map(index => <LoadWord key={index} word={RenderWord(index)}></LoadWord>)}
-        </WordListBlock>
+        </LoadWordListBlock>
     );
 };
 
-export default WordList;
+export default LoadWordList;

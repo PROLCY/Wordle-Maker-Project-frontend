@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import Letter from './Letter';
 
-const WordBlock = styled.div`
+const WordBlock = styled.div` // Word 스타일
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     grid-gap: 5px;
@@ -10,7 +10,7 @@ const WordBlock = styled.div`
         (props.wordState === 'not-word' && 'Quivering 150ms 0ms 3')
     };
 
-    @keyframes Quivering {
+    @keyframes Quivering { // 떨림 애니메이션
         0% { transform: translate(0, 0); }
         25% { transform: translate(-5px, 0); }
         50% { transform: translate(0, 0); }

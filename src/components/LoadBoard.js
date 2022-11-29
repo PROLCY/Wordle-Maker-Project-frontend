@@ -27,14 +27,14 @@ const BoardBlock = styled.div` // 단어 리스트 스타일
     overflow: hidden;
 `;
 
-const PageButtonBlock = styled.div`
+const PageButtonBlock = styled.div` // PageButton을 담는 요소 스타일
     display: flex;
     justify-content: center;
     height: 100px;
     align-items: center;
 `;
 
-const PageButton = styled.div`
+const PageButton = styled.div` // 페이지를 넘기는 버튼 스타일
     line-height: 80px;
     margin: 10px 20px;
     padding: 1px 1px;
@@ -59,7 +59,7 @@ const PageButton = styled.div`
     }
 `;
 
-const StateButtonblock = styled.div`
+const StateButtonblock = styled.div` // delete 버튼 스타일
     display: flex;
     justify-content: center;
     height: 50px;
@@ -74,7 +74,6 @@ const StateButtonblock = styled.div`
         cursor: pointer;
     }
 `;
-
 
 const Message = styled.div` // 알림 박스 스타일
     width: auto;
@@ -110,23 +109,26 @@ const LoadBoard = () => {
     const [nickname, setNickname] = useState('');
     const navigate = useNavigate();
 
-    //console.log(window.location.href);
-
-    const connectSocket = ( makerNickname ) => {
-        /*const socket = io(window.location.href.slice(0, -4)+'loader', {
-            transports: ['websocket'],
-            query: {
-                maker: makerNickname,
-            }
-        });*/
-        const socket = io('http://localhost:4000/loader', {
+    const connectSocket = ( makerNickname ) => { // socket.io(웹소켓) 연결 함수
+        /* 실제 배포 시 사용
+        const socket = io(window.location.href.slice(0, -4)+'loader', {
             transports: ['websocket'],
             query: {
                 maker: makerNickname,
             }
         });
-        socket.on('enter', function(data) {
+        socket.on('typing', function(data) {
             setSolvers(data);
+        });
+        return;
+        */
+
+        // 개발 시 사용
+        const socket = io('http://localhost:4000/loader', {
+            transports: ['websocket'],
+            query: {
+                maker: makerNickname,
+            }
         });
         socket.on('typing', function(data) {
             setSolvers(data);
@@ -134,8 +136,8 @@ const LoadBoard = () => {
         return;
     };
 
-    useEffect(() => {
-        client.get('/load/init')
+    useEffect(() => { // 렌더링될 때 
+        client.get('/load/init') // 세선 검증
             .then( res => {
                 if ( res.data === 'no-session') {
                     setSubmitNickname(false);
@@ -148,46 +150,52 @@ const LoadBoard = () => {
             })
     }, []);
 
-    useEffect(() => {
+    useEffect(() => { // nickname이 입력되었을 때
         if ( nickname === '')
             return;
-        client.post('/load/init', { makerNickname: nickname })
+        client.post('/load/init', { makerNickname: nickname }) // 데이터 요청
             .then( res => {
                 setSolvers(res.data);
                 connectSocket(nickname);
             })
     }, [nickname]);
 
-    const onClickKeyBoard = e => { // 키를 눌렀을 때 실행되는 함수
+    const onClickKeyBoard = e => { // 키보드를 눌렀을 때 실행되는 함수
         if ( e.target.innerText === 'ENTER') { // ENTER를 눌렀을 경우
             if ( word.length < wordMaxLen ) { 
                 setMessage('Not enough letters');
                 setWordState('not-word');
-                setTimeout(() => {setWordState(''); setMessage(null);}, 500);
+                setTimeout(() => {
+                    setWordState(''); 
+                    setMessage(null);
+                }, 500);
                 return;
             }
             
             const makerNickname = word.map(letter => letter.text).join('');
             
-            client.post('/load/exist', { nickname: makerNickname })
+            client.post('/load/exist', { nickname: makerNickname }) // 닉네임 존재 여부 검증 요청
                 .then( res => {
                     if ( res.data === false) {
                         setNickname('');
                         setMessage("It doesn't exist!");
                         setWordState('not-word');
-                        setTimeout(() => {setWordState(''); setMessage(null);}, 500);
+                        setTimeout(() => {
+                            setWordState(''); 
+                            setMessage(null);
+                        }, 500);
                         return;
                     }
                     else {
-                        for( let i = 0 ; i < wordMaxLen ; i++ ) {
-                            word[i].state = 'correct';
-                        }
+                        setWord(word.map(letter => ({
+                            text: letter.text,
+                            state: 'correct'
+                        })));
                         setNickname(makerNickname);
                         setWordList({
                             ...wordList,
                             word,
-                        });
-                        
+                        });  
                         setTimeout(() => {
                             setWord([]);
                             setWordList({
@@ -206,7 +214,7 @@ const LoadBoard = () => {
             setWord(word.slice(0, -1));
             return;
         }
-        if ( word.length > wordMaxLen )
+        if ( word.length >= wordMaxLen )
             return;
         setWord(word.concat({
             text: e.target.innerText,
@@ -215,7 +223,7 @@ const LoadBoard = () => {
         return;
     };
 
-    const onClickPageButton = e => {
+    const onClickPageButton = e => { // 페이지 넘김 버튼을 눌렀을 때 실행되는 함수
         if ( e.target.id === 'next' ) {
             if ( solvers.length > pageIndex * 4 )
                 setPageIndex(pageIndex + 1);
@@ -227,7 +235,7 @@ const LoadBoard = () => {
         }
     };
 
-    const onClickDelete = e => {
+    const onClickDelete = e => { // delete wordle 버튼을 눌렀을 때 실행되는 함수
         client.delete(`/load/delete/${nickname}`)
             .then( res => {
                 if ( res.data === 'oneClick' ) {
@@ -245,14 +253,14 @@ const LoadBoard = () => {
         <BoardContainer submitNickname={submitNickname}>
             <Message message={message}>{message}</Message>
             <BoardBlock>
-                { 
+                { // 닉네임을 제출하지 않았다면 애니메이션이 작동되는 WordList를, 제출했다면 애니메이션이 없는 LoadWordList 렌더링
                     submitNickname === false ? 
                     <WordList lineSet={oneLine} word={word} wordState={wordState} wordList={wordList} listIndex={listIndex}/> :
                     solvers.slice((pageIndex-1)*4, pageIndex*4).map((solver, index) => 
-                    <LoadWordList key={index} lineSet={sevenLines} word={word} wordState={wordState} wordList={solver.nickname.concat(solver.wordList)}/>)
+                    <LoadWordList key={index} lineSet={sevenLines} word={word} wordList={solver.nickname.concat(solver.wordList)}/>)
                 }
             </BoardBlock>
-            {
+            { // 닉네임을 제출하지 않았다면 키보드를, 제출했다면 PageButton과 delete 버튼을 렌더링
                 (submitNickname === false && <Keyboard onClick={onClickKeyBoard} keyState={keyState}/>) ||
                 (submitNickname === true && 
                     <>

@@ -52,7 +52,7 @@ let keyState = {};
 let nickname='';
 let correct_word='';
 
-const Initialized = () => {
+const Initialized = () => { // 렌더링 시 초기화 함수
     isFinished = false;
     submitNickname = false;
     submitWord = false;
@@ -68,8 +68,8 @@ const MakerBoard = () => {
     const [wordState, setWordState] = useState('');
     const [message, setMessage] = useState(null);
 
-    useEffect(() => {
-        client.get('/make/')
+    useEffect(() => { // 처음 렌더링될 때 실행
+        client.get('/make/init') // 세션 검증 및 데이터 요청
             .then( res => {
                 if ( res.data === 'no-session') {
                     Initialized();
@@ -77,7 +77,7 @@ const MakerBoard = () => {
                 }
                 else {
                     const wordText = res.data.correct_word;
-                    let correct_word=[];
+                    let correct_word = [];
                     for( let i = 0 ; i < wordMaxLen ; i++ ) {
                         correct_word.push({
                             text: wordText[i],
@@ -95,39 +95,44 @@ const MakerBoard = () => {
         if ( isFinished )
                 return;
         if ( e.target.innerText === 'ENTER') { // ENTER를 눌렀을 경우
-            if ( word.length < wordMaxLen ) { 
+            if ( word.length < wordMaxLen ) {  // 문자 개수가 부족할 때
                 setMessage('Not enough letters');
                 setWordState('not-word');
-                setTimeout(() => {setWordState(''); setMessage(null);}, 500);
+                setTimeout(() => {
+                    setWordState('');
+                    setMessage(null);}, 
+                500);
                 return;
             }
-            if ( submitNickname === false ) {
+            if ( submitNickname === false ) { // 닉네임 입력 과정
                 
-                for( let i = 0 ; i < wordMaxLen ; i++ )
-                    nickname += word[i].text;
+                nickname = word.map(letter => letter.text).join('');
                 
-                client.post('/make/duplicated', { nickname: nickname })
+                client.post('/make/duplicated', { nickname: nickname }) // 중복 판별 요청
                     .then( res => {
                         if ( res.data === 'duplicated') {
                             nickname = '';
                             setMessage('It already exists!');
                             setWordState('not-word');
-                            setTimeout(() => {setWordState(''); setMessage(null);}, 500);
+                            setTimeout(() => {
+                                setWordState(''); 
+                                setMessage(null);
+                            }, 500);
                             return;
                         }
                         else {
                             submitNickname = true;
 
-                            for( let i = 0 ; i < wordMaxLen ; i++ ) {
-                                word[i].state = 'correct';
-                            }
+                            setWord(word.map(letter => ({
+                                text: letter.text,
+                                state: 'correct'
+                            })));
                             setWordList({
                                 ...wordList,
                                 word,
                             });
                             
                             setTimeout(() => {
-                                
                                 setWord([]);
                                 setWordList({
                                     word,
@@ -136,7 +141,8 @@ const MakerBoard = () => {
                             }, 2000);
                         }
                     });
-            } else if ( submitWord === false ) {
+            
+            } else if ( submitWord === false ) { // 정답 단어 입력 과정
 
                 correct_word = word.map(letter => letter.text).join('');
 
@@ -145,25 +151,30 @@ const MakerBoard = () => {
                     word,
                 });
 
-                client.post('/make/exist', { word: correct_word })
+                client.post('/make/exist', { word: correct_word }) // 단어 존재 여부 판별 요청
                     .then( res => {
                         if ( res.data.exist === false) {
                             setMessage('Not in word list');
                             setWordState('not-word');
-                            setTimeout(() => {setWordState(''); setMessage(null);}, 500);
+                            setTimeout(() => {
+                                setWordState(''); 
+                                setMessage(null);
+                            }, 500);
                         } else {
                             submitWord = true;
                             isFinished = true;
 
-                            for( let i = 0 ; i < wordMaxLen ; i++ )
-                                word[i].state = 'correct';
+                            setWord(word.map(letter => ({
+                                text: letter.text,
+                                state: 'correct'
+                            })));
 
-                            client.post('/make/register', { 
+                            client.post('/make/register', { // wordle 등록 요청
                                 nickname: nickname, 
                                 correct_word: correct_word, 
                             })
                                 .then( res => {
-                                    console.log(res.data);
+                                    // res.data (wordle 링크)
                                     setMessage('Your Wordle was made!');
                                     setTimeout(() => {
                                         setMessage(res.data);
@@ -181,7 +192,7 @@ const MakerBoard = () => {
             setWord(word.slice(0, -1));
             return;
         }
-        if ( word.length > wordMaxLen )
+        if ( word.length >= wordMaxLen )
             return;
         setWord(word.concat({
             text: e.target.innerText,
