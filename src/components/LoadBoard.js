@@ -98,6 +98,11 @@ const wordMaxLen = 5;
 let listIndex = 0;
 let keyState = {};
 
+const Initialized = () => { // 렌더링 시 초기화 함수
+    listIndex = 0;
+    keyState = {};
+};
+
 const LoadBoard = () => {
     const [word, setWord] = useState([]);
     const [wordList, setWordList] = useState([]);
@@ -137,6 +142,7 @@ const LoadBoard = () => {
     };
 
     useEffect(() => { // 렌더링될 때 
+        Initialized();
         client.get('/load/init') // 세선 검증
             .then( res => {
                 if ( res.data === 'no-session') {

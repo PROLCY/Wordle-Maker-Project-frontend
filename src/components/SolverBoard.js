@@ -79,6 +79,13 @@ const connectSocket = ( makerNickname ) => { // socket.io(웹소켓) 연결 함�
     return socket;
 };
 
+const Initialized = () => { // 렌더링 시 초기화 함수
+    isFinished = false;
+    submitNickname = false;
+    keyState = {};
+    nickname = '';
+};
+
 const SolverBoard = () => {
     const [word, setWord] = useState([]);
     const [wordList, setWordList] = useState([]);
@@ -91,6 +98,7 @@ const SolverBoard = () => {
 
     useEffect(() => { // 렌더링될 때
         connectSocket(params.maker);
+        Initialized();
         client.get(`/solve/${params.maker}/init`) // 세션 검증 및 데이터 요청
             .then( res => {
                 if ( res.data === 'Not Found') {
